@@ -1,6 +1,7 @@
-# A release: push a tag like v1.2.0 (git tag v1.2.0 && git push origin v1.2.0).
-# Builds the Linux binaries and the Docker image, then publishes both with the
-# notes of that version from CHANGELOG.md.
+# A release: push a tag like v1.2.0 (git tag v1.2.0 && git push origin v1.2.0),
+# or run this workflow from the Actions tab with the version: then the tag is
+# created on the commit it runs on. Builds the Linux binaries and the Docker
+# image, then publishes both with the notes of that version from CHANGELOG.md.
 name: Release
 
 on:
@@ -9,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing tag to (re)build, e.g. v1.0.0
+        description: Version to publish from the chosen branch, e.g. v1.0.0
         required: true
 
 permissions:
@@ -27,8 +28,6 @@ jobs:
         arch: [amd64, arm64]
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ env.TAG }}
       - uses: actions/setup-go@v7
         with:
           go-version: stable
@@ -60,8 +59,6 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ env.TAG }}
       - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v4
         with:
@@ -101,8 +98,6 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ env.TAG }}
       - uses: actions/download-artifact@v8
         with:
           path: dist
@@ -122,6 +117,7 @@ jobs:
       - uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.TAG }}
+          target_commitish: ${{ github.sha }}
           name: Ebi Furai ${{ env.TAG }}
           body_path: notes.md
           files: dist/*
