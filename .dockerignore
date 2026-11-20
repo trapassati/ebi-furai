@@ -1,0 +1,10 @@
+.git
+.github
+data
+.env
+*.db
+dist
+third_party
+site
+tests
+node_modules

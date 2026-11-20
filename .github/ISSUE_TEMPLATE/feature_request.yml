@@ -1,0 +1,10 @@
+name: Idea
+description: Something that would make Ebi Furai better
+labels: [enhancement]
+body:
+  - type: textarea
+    attributes:
+      label: What would you like
+      description: The situation it helps with matters more than the solution.
+    validations:
+      required: true

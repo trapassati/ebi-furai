@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="whiteBody" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.55" stop-color="#f1edff"/>
+      <stop offset="1" stop-color="#d9d0f5"/>
+    </linearGradient>
+    <linearGradient id="redBody" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff9a5c"/>
+      <stop offset="0.5" stop-color="#ff5a2e"/>
+      <stop offset="1" stop-color="#e02b1a"/>
+    </linearGradient>
+    <linearGradient id="redSpot" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff7a45"/>
+      <stop offset="1" stop-color="#ec3a1f"/>
+    </linearGradient>
+    <linearGradient id="whiteSpot" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#ece6ff"/>
+    </linearGradient>
+    <linearGradient id="fin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe27a"/>
+      <stop offset="0.6" stop-color="#ffc23d"/>
+      <stop offset="1" stop-color="#f59a1b"/>
+    </linearGradient>
+    <radialGradient id="eyeShine" cx="0.35" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#4a4458"/>
+      <stop offset="1" stop-color="#1c1a24"/>
+    </radialGradient>
+
+    <path id="bodyShape" d="M176 82
+      C 206 16, 336 20, 408 106
+      C 462 172, 470 272, 448 356
+      C 443 374, 424 376, 418 360
+      C 404 296, 372 236, 312 198
+      C 252 162, 194 152, 176 82 Z"/>
+    <clipPath id="bodyClip"><use href="#bodyShape"/></clipPath>
+
+    <!-- one koi (head up, swimming along the right half) -->
+    <symbol id="koiFins" overflow="visible">
+      <g stroke="#e8901a" stroke-opacity="0.45" stroke-width="2.5" stroke-linecap="round" fill="url(#fin)">
+        <!-- tail -->
+        <path d="M434 348 C 392 364, 360 420, 372 486 C 398 456, 420 432, 437 404 C 454 436, 480 458, 508 462 C 500 412, 474 370, 434 348 Z"/>
+        <path d="M434 372 L 392 462 M 436 378 L 418 446 M 438 380 L 470 448 M 440 374 L 492 446" fill="none"/>
+        <!-- pectoral fins -->
+        <path d="M276 168 C 242 170, 214 194, 206 236 C 242 230, 270 208, 292 182 Z"/>
+        <path d="M276 178 L 222 224 M 284 180 L 248 220" fill="none"/>
+        <path d="M384 104 C 410 74, 450 66, 486 80 C 470 116, 432 132, 396 128 Z"/>
+        <path d="M398 112 L 470 86 M 400 120 L 456 108" fill="none"/>
+        <!-- pelvic fins -->
+        <path d="M360 238 C 340 248, 328 268, 330 294 C 352 284, 366 266, 372 250 Z"/>
+        <path d="M448 210 C 470 206, 488 218, 494 236 C 476 240, 460 236, 446 226 Z"/>
+      </g>
+    </symbol>
+  </defs>
+
+  
+  <!-- RED KOI (same fish rotated 180°) -->
+  <g transform="rotate(180 256 256)">
+    <use href="#koiFins"/>
+    <use href="#bodyShape" fill="url(#redBody)"/>
+    <g clip-path="url(#bodyClip)">
+      <!-- white patches -->
+      <path d="M268 70 C 290 48, 336 54, 350 82 C 362 106, 342 128, 316 120 C 300 136, 270 128, 268 108 C 248 102, 252 80, 268 70 Z" fill="url(#whiteSpot)"/>
+      <circle cx="352" cy="138" r="10" fill="url(#whiteSpot)"/>
+      <circle cx="334" cy="152" r="6" fill="url(#whiteSpot)"/>
+      <path d="M470 230 C 440 222, 418 250, 424 282 C 430 312, 462 318, 480 300 Z" fill="url(#whiteSpot)"/>
+      <!-- belly shade + back highlight -->
+      <path d="M176 82 C 194 152, 252 162, 312 198 C 372 236, 404 296, 418 360 L 398 372 C 388 304, 356 250, 300 214 C 244 180, 190 168, 176 82 Z" fill="#a8150d" opacity="0.18"/>
+      <path d="M230 52 C 300 30, 370 70, 410 130" stroke="#fff" stroke-opacity="0.35" stroke-width="7" stroke-linecap="round" fill="none"/>
+    </g>
+    <circle cx="224" cy="70" r="11" fill="url(#eyeShine)"/>
+    <circle cx="220" cy="66" r="3.5" fill="#fff" opacity="0.85"/>
+  </g>
+
+  <!-- WHITE KOI -->
+  <g>
+    <use href="#koiFins"/>
+    <use href="#bodyShape" fill="url(#whiteBody)"/>
+    <g clip-path="url(#bodyClip)">
+      <!-- red patches (kohaku) -->
+      <path d="M282 62 C 300 40, 342 44, 356 72 C 368 98, 348 118, 326 112 C 312 130, 282 128, 278 106 C 262 98, 266 74, 282 62 Z" fill="url(#redSpot)"/>
+      <circle cx="292" cy="132" r="13" fill="url(#redSpot)"/>
+      <circle cx="372" cy="128" r="7" fill="url(#redSpot)"/>
+      <path d="M476 236 C 446 224, 420 248, 422 282 C 424 318, 458 330, 482 312 Z" fill="url(#redSpot)"/>
+      <!-- belly shade + back highlight -->
+      <path d="M176 82 C 194 152, 252 162, 312 198 C 372 236, 404 296, 418 360 L 398 372 C 388 304, 356 250, 300 214 C 244 180, 190 168, 176 82 Z" fill="#8a76c9" opacity="0.18"/>
+      <path d="M230 52 C 300 30, 370 70, 410 130" stroke="#fff" stroke-opacity="0.8" stroke-width="7" stroke-linecap="round" fill="none"/>
+    </g>
+    <circle cx="224" cy="70" r="11" fill="url(#eyeShine)"/>
+    <circle cx="220" cy="66" r="3.5" fill="#fff" opacity="0.85"/>
+  </g>
+</svg>

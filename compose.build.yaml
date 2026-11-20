@@ -1,0 +1,10 @@
+# Builds the image from this folder instead of downloading it:
+#
+#   docker compose -f compose.yaml -f compose.build.yaml up -d --build
+services:
+  ebi-furai:
+    image: ebi-furai:local
+    build:
+      context: .
+      # Always use the latest base images (Go, Alpine, distroless).
+      pull: true

@@ -1,0 +1,19 @@
+# Data of a local instance
+/data/
+.env
+*.db
+*.db-wal
+*.db-shm
+
+# Downloaded at build time (scripts/fetch-gsap.sh)
+/web/static/vendor/gsap-*.min.js
+
+# Build output
+/dist/
+/third_party/
+/ebi-furai
+__pycache__/
+node_modules/
+
+# Local Docker Compose changes (for example ./data instead of the volume)
+compose.override.yaml

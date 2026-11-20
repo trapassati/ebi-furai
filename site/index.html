@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ebi Furai: a self-hosted RSS reader</title>
+  <meta name="description" content="A self-hosted RSS reader in the spirit of Reeder Classic, made for iPhone and iPad first. One small server, your feeds stay with you.">
+  <meta property="og:title" content="Ebi Furai">
+  <meta property="og:description" content="A self-hosted RSS reader in the spirit of Reeder Classic, made for iPhone and iPad first.">
+  <meta property="og:image" content="https://trapassati.github.io/ebi-furai/images/ipad-light.webp">
+  <meta name="theme-color" content="#2a1670">
+  <link rel="icon" href="images/icon.png">
+  <link rel="apple-touch-icon" href="images/icon.png">
+  <style>
+    @font-face { font-family: Outfit; src: url(fonts/outfit-latin.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
+    @font-face { font-family: Outfit; src: url(fonts/outfit-latin-ext.woff2) format("woff2"); font-weight: 100 900; font-display: swap;
+      unicode-range: U+0100-024F, U+1E00-1EFF, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+    @font-face { font-family: "Ebi Mark"; src: url(fonts/ebi-furai-mark.woff2) format("woff2"); font-display: swap; }
+
+    :root {
+      --night: #22125e;      /* the icon's background, deepest */
+      --night-2: #3a1f8f;
+      --violet: #7b5cff;
+      --batter: #f6c56a;     /* the shrimp */
+      --tail: #ff6a35;       /* its tail, and the koi */
+      --page: #f5f3fc;       /* a lavender-tinted white */
+      --card: #ffffff;
+      --ink: #1b1640;
+      --muted: #5d5880;
+      --line: #e3def4;
+      --code: #1a1240;
+      --r: 22px;
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--page); color: var(--ink); font: 400 18px/1.6 Outfit, system-ui, sans-serif; }
+    a { color: var(--night-2); }
+    img { max-width: 100%; display: block; }
+    .wrap { width: min(1160px, 100% - 32px); margin-inline: auto; }
+    .hero-grid > *, .install > *, .feature > *, .two > *, .grid3 > *, .way li > div { min-width: 0; }
+    :focus-visible { outline: 3px solid var(--tail); outline-offset: 3px; border-radius: 6px; }
+
+    /* ---- hero: night purple, the shrimp's colors ---- */
+    .hero { position: relative; overflow: hidden; color: #fff;
+      background: radial-gradient(120% 90% at 85% 10%, #7b5cff 0%, transparent 55%), linear-gradient(160deg, var(--night-2), var(--night) 70%); }
+    .nav { display: flex; align-items: center; gap: 12px; padding: 22px 0; }
+    .nav img { width: 40px; height: 40px; border-radius: 11px; }
+    .nav b { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+    .nav nav { margin-left: auto; display: flex; gap: 22px; }
+    .nav nav a { color: #e7e1ff; text-decoration: none; font-weight: 500; }
+    .nav nav a:hover { color: #fff; }
+    .hero-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 40px; align-items: center; padding: 40px 0 0; }
+    .kana { font-family: "Ebi Mark", Outfit, sans-serif; font-size: 22px; color: var(--batter); letter-spacing: .08em; margin: 0 0 14px; }
+    h1 { font-size: clamp(44px, 6.4vw, 84px); line-height: .98; letter-spacing: -.035em; font-weight: 800; margin: 0 0 22px; }
+    .lede { font-size: 21px; line-height: 1.5; color: #e2dcff; max-width: 34ch; margin: 0 0 32px; }
+    .cta { display: flex; flex-wrap: wrap; gap: 12px; }
+    .btn { display: inline-flex; align-items: center; gap: 10px; padding: 15px 24px; border-radius: 999px; font-weight: 600; font-size: 17px;
+      text-decoration: none; transition: transform .2s, background .2s; }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-gold { background: var(--batter); color: var(--night); }
+    .btn-ghost { color: #fff; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.35); }
+    .btn svg { width: 20px; height: 20px; }
+    .meta { margin: 26px 0 0; color: #bdb3ef; font-size: 15px; }
+
+    .stage { position: relative; height: 620px; }
+    .koi { position: absolute; width: 520px; height: 520px; left: 50%; top: 46%; margin: -260px 0 0 -260px; opacity: .9; pointer-events: none; }
+    .phone { position: absolute; width: 270px; border-radius: 42px; padding: 9px; background: #0d0a24;
+      box-shadow: 0 40px 80px -30px rgba(5, 0, 30, .8), inset 0 0 0 1.5px rgba(255,255,255,.12); }
+    .phone img { border-radius: 34px; }
+    .phone.p1 { left: 2%; top: 90px; transform: rotate(-5deg); z-index: 2; }
+    .phone.p2 { left: 46%; top: 24px; transform: rotate(4deg); z-index: 1; }
+
+    /* ---- sections ---- */
+    section { padding: 110px 0; }
+    h2 { font-size: clamp(34px, 4.2vw, 52px); line-height: 1.05; letter-spacing: -.025em; font-weight: 750; margin: 0 0 18px; }
+    .intro { color: var(--muted); font-size: 20px; max-width: 58ch; margin: 0 0 48px; }
+
+    /* install */
+    .install { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+    .way { background: var(--card); border-radius: var(--r); padding: 30px; border: 1px solid var(--line); }
+    .way h3 { margin: 0 0 4px; font-size: 24px; letter-spacing: -.01em; }
+    .way > p { margin: 0 0 20px; color: var(--muted); font-size: 16px; }
+    .way ol { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 16px; }
+    .way li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; gap: 12px; align-items: start; font-size: 16px; }
+    .way li::before { content: counter(s); width: 28px; height: 28px; border-radius: 50%; background: var(--night-2); color: #fff;
+      font-weight: 700; font-size: 14px; display: grid; place-items: center; margin-top: 2px; }
+    pre { position: relative; margin: 8px 0 0; background: var(--code); color: #efeaff; border-radius: 14px; padding: 14px 52px 14px 16px;
+      font: 14px/1.6 ui-monospace, "SF Mono", Menlo, monospace; overflow-x: auto; white-space: pre; }
+    pre .c { color: #9f93d6; }
+    .copy { position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; border: 0; border-radius: 9px; cursor: pointer;
+      background: rgba(255,255,255,.08); color: #d9d2ff; display: grid; place-items: center; }
+    .copy:hover { background: rgba(255,255,255,.16); }
+    .copy svg { width: 18px; height: 18px; }
+    .copy.done { color: var(--batter); }
+    .note { margin-top: 26px; color: var(--muted); font-size: 16px; }
+
+    /* features: real screenshots carry it */
+    .feature { display: grid; grid-template-columns: 1fr 1.35fr; gap: 56px; align-items: center; margin-bottom: 110px; }
+    .feature.flip { grid-template-columns: 1.35fr 1fr; }
+    .feature.flip .text { order: 2; }
+    .feature h3 { font-size: 32px; line-height: 1.1; letter-spacing: -.02em; margin: 0 0 14px; }
+    .feature p { color: var(--muted); margin: 0 0 14px; }
+    .feature ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+    .feature li { padding-left: 26px; position: relative; }
+    .feature li::before { content: ""; position: absolute; left: 4px; top: .62em; width: 9px; height: 9px; border-radius: 50%; background: var(--tail); }
+    .shot { border-radius: 20px; box-shadow: 0 30px 60px -30px rgba(30, 15, 90, .45); border: 1px solid var(--line); }
+    .pair { display: flex; gap: 18px; justify-content: center; }
+    .pair .phone { position: static; width: min(250px, 46%); transform: none; }
+
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px 40px; }
+    .grid3 h4 { margin: 0 0 6px; font-size: 19px; }
+    .grid3 p { margin: 0; color: var(--muted); font-size: 16px; }
+
+    /* https */
+    .dark { background: var(--night); color: #efeaff; }
+    .dark .intro, .dark p { color: #c4bbf0; }
+    .dark h3 { color: #fff; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+    .panel { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: var(--r); padding: 28px; }
+    .panel h3 { margin: 0 0 8px; font-size: 22px; }
+    .panel p { margin: 0 0 6px; font-size: 16px; }
+    .dark a { color: var(--batter); }
+
+    /* faq */
+    details { border-bottom: 1px solid var(--line); padding: 20px 0; }
+    summary { cursor: pointer; font-weight: 600; font-size: 19px; list-style: none; display: flex; justify-content: space-between; gap: 20px; }
+    summary::after { content: "+"; color: var(--violet); font-weight: 400; font-size: 26px; line-height: 1; }
+    details[open] summary::after { content: "−"; }
+    details p { color: var(--muted); margin: 12px 0 0; max-width: 70ch; }
+
+    footer { padding: 50px 0 70px; color: var(--muted); font-size: 15px; border-top: 1px solid var(--line); }
+    footer .row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18px; }
+    footer a { color: var(--ink); }
+
+    @media (max-width: 900px) {
+      .hero-grid, .install, .feature, .feature.flip, .two { grid-template-columns: 1fr; }
+      .feature.flip .text { order: 0; }
+      .stage { height: 520px; }
+      .phone { width: 230px; }
+      .koi { width: 420px; height: 420px; margin: -210px 0 0 -210px; }
+      .grid3 { grid-template-columns: 1fr 1fr; }
+      .nav nav a.hide { display: none; }
+      section { padding: 80px 0; }
+      .feature { margin-bottom: 80px; gap: 32px; }
+    }
+    @media (max-width: 560px) {
+      body { font-size: 17px; }
+      .grid3 { grid-template-columns: 1fr; }
+      .stage { height: 440px; }
+      .phone { width: 190px; border-radius: 32px; padding: 7px; }
+      .phone img { border-radius: 26px; }
+      .phone.p1 { left: 0; }
+      .phone.p2 { left: auto; right: 0; }
+      .koi { width: 340px; height: 340px; margin: -170px 0 0 -170px; }
+      .way { padding: 22px; }
+      .nav nav { gap: 14px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <div class="nav">
+        <img src="images/icon.png" alt="">
+        <b>Ebi Furai</b>
+        <nav>
+          <a href="#install">Install</a>
+          <a class="hide" href="#features">Features</a>
+          <a href="https://github.com/trapassati/ebi-furai">GitHub</a>
+        </nav>
+      </div>
+      <div class="hero-grid">
+        <div>
+          <p class="kana" lang="ja">エビフライ</p>
+          <h1>Your feeds, on your server, in your pocket.</h1>
+          <p class="lede">A calm RSS reader in the spirit of Reeder Classic, made for iPhone and iPad first. One small server you run yourself.</p>
+          <div class="cta">
+            <a class="btn btn-gold" href="#install">Install it</a>
+            <a class="btn btn-ghost" href="https://github.com/trapassati/ebi-furai">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.08 0 4.41-2.69 5.39-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+              Source code
+            </a>
+          </div>
+          <p class="meta">Free and open source (AGPL-3.0) · Docker or a Linux service · English and Italian</p>
+        </div>
+        <div class="stage" aria-hidden="true">
+          <img class="koi" src="images/koi.svg" alt="">
+          <div class="phone p1"><img src="images/iphone-light.webp" alt=""></div>
+          <div class="phone p2"><img src="images/iphone-reader-dark.webp" alt=""></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="install">
+      <div class="wrap">
+        <h2>Install in a minute</h2>
+        <p class="intro">Any Linux machine that stays on: a home server, a Raspberry Pi 4 or 5, a NAS, a small VPS. Nothing to compile.</p>
+        <div class="install">
+          <div class="way">
+            <h3>With Docker</h3>
+            <p>Recommended. Runs on amd64 and arm64.</p>
+            <ol>
+              <li><div>Get the compose file and start it.
+<pre><code>mkdir ebi-furai && cd ebi-furai
+curl -fsSLO https://raw.githubusercontent.com/trapassati/ebi-furai/main/compose.yaml
+docker compose up -d</code></pre></div></li>
+              <li><div>Read the setup code from the log.
+<pre><code>docker compose logs ebi-furai | grep "setup code"</code></pre></div></li>
+              <li><div>Open <b>http://your-server:9099</b>, type the code and create your account.</div></li>
+            </ol>
+          </div>
+          <div class="way">
+            <h3>As a Linux service</h3>
+            <p>No Docker: one binary and a systemd unit.</p>
+            <ol>
+              <li><div>Run the installer (Debian, Ubuntu, Raspberry Pi OS…).
+<pre><code>curl -fsSL https://raw.githubusercontent.com/trapassati/ebi-furai/main/scripts/install.sh | sudo sh</code></pre></div></li>
+              <li><div>Read the setup code.
+<pre><code>journalctl -u ebi-furai | grep "setup code"</code></pre></div></li>
+              <li><div>Open <b>http://your-server:9099</b> and create your account.</div></li>
+            </ol>
+          </div>
+        </div>
+        <p class="note">Updating: <code>docker compose pull &amp;&amp; docker compose up -d</code>, or run the installer again. All settings are optional and listed in the <a href="https://github.com/trapassati/ebi-furai#configuration">README</a>.</p>
+      </div>
+    </section>
+
+    <section id="features" style="padding-top:0">
+      <div class="wrap">
+        <div class="feature">
+          <div class="text">
+            <h3>Reads like a good magazine</h3>
+            <p>Cards with pictures and previews, a reader that gets out of the way, and the full text of truncated articles with one tap.</p>
+            <ul>
+              <li>Unread, Today, Starred and All, plus your folders</li>
+              <li>Reading time, typefaces, sizes, light and dark</li>
+              <li>Swipe to star or mark as read, pull to refresh</li>
+            </ul>
+          </div>
+          <div class="pair">
+            <div class="phone"><img src="images/iphone-home-light.webp" alt="Home with collections and feeds" loading="lazy"></div>
+            <div class="phone"><img src="images/iphone-dark.webp" alt="Unread articles, dark theme" loading="lazy"></div>
+          </div>
+        </div>
+
+        <div class="feature flip">
+          <div class="text">
+            <h3>Three columns on iPad, shortcuts on the desktop</h3>
+            <p>Feeds, list and article side by side. On a computer everything scales with the screen and the keyboard does the walking: J and K, M, S, slash to search.</p>
+          </div>
+          <img class="shot" src="images/ipad-light.webp" alt="Three columns on iPad" loading="lazy">
+        </div>
+
+        <div class="grid3">
+          <div><h4>Offline</h4><p>The latest unread and the starred stay on the device. What you do offline is sent when you're back.</p></div>
+          <div><h4>Notifications and badge</h4><p>A summary of what's waiting, at the times you choose, with the count on the app icon.</p></div>
+          <div><h4>Keyword filters</h4><p>Hide or mark as read what you don't care about: football on a news site, horoscopes, sponsored posts.</p></div>
+          <div><h4>Duplicates merged</h4><p>The same story from a newspaper and from Google News shows up once, and is read everywhere.</p></div>
+          <div><h4>Mark above or below</h4><p>Read half the list? Mark the rest in one go, and undo if you change your mind.</p></div>
+          <div><h4>Feed health</h4><p>Feeds that stop working are listed with what the error means and what to do about it.</p></div>
+          <div><h4>Several people</h4><p>Each user has their own feeds. Two-step verification, recovery codes, connected devices.</p></div>
+          <div><h4>Private by design</h4><p>Images go through your server, so sites never see your devices. No analytics, no third parties.</p></div>
+          <div><h4>Backups</h4><p>A copy of the database every day, kept for weeks, downloadable from the app.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dark">
+      <div class="wrap">
+        <h2>Take it out of the house</h2>
+        <p class="intro">At home it works at http://your-server:9099. To add it to the iPhone's Home Screen, read away from home and get notifications, give it an https address.</p>
+        <div class="two">
+          <div class="panel">
+            <h3>Cloudflare Tunnel</h3>
+            <p>No open ports. Point a public hostname to <code>http://localhost:9099</code>, then set <code>BIND_ADDR=127.0.0.1</code> and <code>TRUST_CF_HEADER=true</code>.</p>
+            <p>Leave Cloudflare Access off: it gets in the way of the installed app.</p>
+          </div>
+          <div class="panel">
+            <h3>A reverse proxy</h3>
+            <p>With your own domain, <a href="https://caddyserver.com/">Caddy</a> fetches the certificate by itself:</p>
+<pre><code>rss.example.com {
+    reverse_proxy localhost:9099
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2>Questions</h2>
+        <details><summary>What does it need to run?</summary><p>Very little: it's one program with an SQLite database. It runs happily on a Raspberry Pi or an old home server; a few hundred feeds take a few tens of megabytes of memory.</p></details>
+        <details><summary>Can I bring my feeds from another reader?</summary><p>Yes. Export an OPML file from the old reader and import it in Settings → Feeds. You can export yours the same way at any time.</p></details>
+        <details><summary>Does it work on Android and on the desktop?</summary><p>Yes, in any modern browser. Chrome and Edge can install it as an app; on the desktop the interface scales with the screen and has keyboard shortcuts.</p></details>
+        <details><summary>Where is my data?</summary><p>Only on your server: in the Docker volume, or in /var/lib/ebi-furai with the service. The app keeps a copy of recent articles on each device for offline reading.</p></details>
+        <details><summary>Why "Ebi Furai"?</summary><p>It's the Japanese name of fried shrimp in tempura batter. Golden outside, good inside: we liked that for a feed reader.</p></details>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap row">
+      <span>© 2026 Fartingloud. Free software under the <a href="https://github.com/trapassati/ebi-furai/blob/main/LICENSE">GNU AGPL v3</a>.</span>
+      <span><a href="https://github.com/trapassati/ebi-furai/releases">Releases</a> · <a href="https://github.com/trapassati/ebi-furai/issues">Issues</a> · <a href="https://github.com/trapassati/ebi-furai/blob/main/CHANGELOG.md">Changelog</a></span>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.1/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.27/dist/lenis.min.js"></script>
+  <script>
+    // Copy buttons on the commands.
+    const COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>';
+    const DONE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+    document.querySelectorAll('pre').forEach((pre) => {
+      const b = document.createElement('button');
+      b.className = 'copy'; b.type = 'button'; b.setAttribute('aria-label', 'Copy'); b.innerHTML = COPY;
+      b.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(pre.querySelector('code').innerText); } catch { return; }
+        b.classList.add('done'); b.innerHTML = DONE;
+        if (window.gsap) gsap.fromTo(b, { scale: .7 }, { scale: 1, duration: .4, ease: 'back.out(3)' });
+        setTimeout(() => { b.classList.remove('done'); b.innerHTML = COPY; }, 1600);
+      });
+      pre.append(b);
+    });
+
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (window.gsap && !still) {
+      // The one moment: the koi swim slowly around the phones (counter-clockwise,
+      // as in the app), and the hero comes in once.
+      gsap.to('.koi', { rotation: -360, duration: 60, ease: 'none', repeat: -1 });
+      gsap.from('.hero-grid > div:first-child > *', { y: 24, opacity: 0, duration: .8, stagger: .08, ease: 'expo.out' });
+      gsap.from('.phone.p1', { y: 60, opacity: 0, rotation: -12, duration: 1.2, delay: .2, ease: 'expo.out' });
+      gsap.from('.phone.p2', { y: 80, opacity: 0, rotation: 12, duration: 1.2, delay: .35, ease: 'expo.out' });
+    }
+    if (window.Lenis && !still) {
+      const lenis = new Lenis({ anchors: true });
+      const raf = (t) => { lenis.raf(t); requestAnimationFrame(raf); };
+      requestAnimationFrame(raf);
+    }
+  </script>
+</body>
+</html>

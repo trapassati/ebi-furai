@@ -1,0 +1,127 @@
+# A release: push a tag like v1.2.0 (git tag v1.2.0 && git push origin v1.2.0).
+# Builds the Linux binaries and the Docker image, then publishes both with the
+# notes of that version from CHANGELOG.md.
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to (re)build, e.g. v1.0.0
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  binaries:
+    name: Binaries
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+      - name: Build
+        env:
+          GOOS: linux
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: "0"
+          GOAMD64: v1
+        run: |
+          sh scripts/fetch-gsap.sh
+          go mod tidy
+          out="dist/ebi-furai_linux_${{ matrix.arch }}"
+          mkdir -p "$out"
+          go build -trimpath -ldflags="-s -w -X main.version=${TAG#v}" -o "$out/ebi-furai" ./cmd/ebi-furai
+          GOOS= GOARCH= sh scripts/collect-licenses.sh "$out/licenses"
+          cp LICENSE NOTICE README.md CHANGELOG.md .env.example packaging/ebi-furai.service "$out/"
+          tar -C "$out" -czf "$out.tar.gz" .
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ebi-furai_linux_${{ matrix.arch }}
+          path: dist/*.tar.gz
+
+  image:
+    name: Docker image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ env.TAG }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ env.TAG }}
+            type=semver,pattern={{major}},value=${{ env.TAG }}
+            type=raw,value=latest
+          labels: |
+            org.opencontainers.image.title=Ebi Furai
+            org.opencontainers.image.description=Self-hosted RSS reader in the spirit of Reeder Classic
+            org.opencontainers.image.licenses=AGPL-3.0-only
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          pull: true
+          build-args: VERSION=${{ env.TAG }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  publish:
+    name: Publish
+    needs: [binaries, image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums and notes
+        run: |
+          cp scripts/install.sh dist/
+          (cd dist && sha256sum *.tar.gz install.sh > checksums.txt)
+          # The section of this version in CHANGELOG.md.
+          awk -v v="## ${TAG#v}" '$0==v{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md
+          cat >> notes.md <<EOF
+
+          ### Install
+          Docker: \`docker compose pull && docker compose up -d\` with the [compose.yaml](https://github.com/${{ github.repository }}/blob/main/compose.yaml) (image \`ghcr.io/${{ github.repository }}:${TAG#v}\`).
+          Linux service: \`curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/install.sh | sudo sh\`
+          EOF
+      - uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ env.TAG }}
+          name: Ebi Furai ${{ env.TAG }}
+          body_path: notes.md
+          files: dist/*

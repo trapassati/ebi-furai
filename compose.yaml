@@ -1,0 +1,34 @@
+# Ebi Furai with Docker Compose.
+#
+#   1. put this file in a folder, for example ~/ebi-furai
+#   2. docker compose up -d
+#   3. open http://SERVER-ADDRESS:9099 and create the administrator with
+#      the setup code shown by: docker compose logs ebi-furai
+#
+# Settings: copy .env.example to .env next to this file (all optional).
+# Update: docker compose pull && docker compose up -d
+
+services:
+  ebi-furai:
+    image: ghcr.io/trapassati/ebi-furai:latest
+    container_name: ebi-furai
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      # Database, backups and site icons, in a Docker volume. To keep them
+      # in a folder instead: - ./data:/data  (then: sudo chown 65532:65532 data)
+      - data:/data
+    ports:
+      # 0.0.0.0 = reachable from your network. With a tunnel or a reverse
+      # proxy on the same machine, set BIND_ADDR=127.0.0.1 in .env.
+      - "${BIND_ADDR:-0.0.0.0}:${PORT:-9099}:9099"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  data:
