@@ -42,6 +42,9 @@ func main() {
 	switch cmd {
 	case "", "serve":
 		err = run()
+		if errors.Is(err, errRestart) {
+			err = restartSelf()
+		}
 	case "healthcheck":
 		err = healthcheck()
 	case "backup":
@@ -65,12 +68,24 @@ func run() error {
 	if err := os.MkdirAll(cfg.DataDir, 0o700); err != nil {
 		return err
 	}
+	// A backup restored from the app waits here for this start.
+	restored, err := backup.ApplyPending(cfg.DBPath())
+	if err != nil {
+		return err
+	}
 	conn, err := db.Open(cfg.DBPath())
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
 	st := store.New(conn)
+	if restored {
+		// The sessions in the backup belong to another moment.
+		if err := st.DeleteAllSessions(); err != nil {
+			return err
+		}
+		slog.Warn("database restored from a backup: everyone signs in again")
+	}
 
 	setupCode, err := bootstrapAdmin(cfg, st)
 	if err != nil {
@@ -88,8 +103,11 @@ func run() error {
 		return err
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	sigCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+	ctx, cancel := context.WithCancel(sigCtx)
+	defer cancel()
+	restart := make(chan struct{}, 1)
 
 	// Ad filter: on unless an admin turned it off in the settings.
 	var adOn atomic.Bool
@@ -126,6 +144,12 @@ func run() error {
 	if cfg.Backups {
 		bk := backup.NewManager(st.DB, cfg.BackupDir, cfg.BackupDaily, cfg.BackupWeekly, cfg.Location)
 		apiSrv.SetBackups(bk)
+		apiSrv.SetRestart(func() {
+			select {
+			case restart <- struct{}{}:
+			default:
+			}
+		})
 		go bk.Run(ctx)
 	}
 
@@ -145,17 +169,36 @@ func run() error {
 		}
 	}()
 
+	var result error
 	select {
 	case <-ctx.Done():
 	case err := <-errCh:
 		return err
+	case <-restart:
+		result = errRestart
 	}
 	slog.Info("shutting down")
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
+	cancel()
+	shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancelShutdown()
 	srv.Shutdown(shutdownCtx)
 	<-fetchDone
-	return nil
+	return result
+}
+
+// errRestart: run ended to start again (a restored backup is waiting).
+var errRestart = errors.New("restart")
+
+// restartSelf runs this same program again in place of the current
+// process (same PID: fine for Docker and systemd), once run has closed the
+// database. The new start applies the restored backup.
+func restartSelf() error {
+	exe, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	slog.Info("restarting")
+	return syscall.Exec(exe, os.Args, os.Environ())
 }
 
 // bootstrapAdmin creates the first administrator when the database has no

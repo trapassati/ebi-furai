@@ -16,7 +16,7 @@ def two_step_verification(browser):
     pg.click("button[aria-label=Impostazioni]")
     pg.wait_for_timeout(700)
     pg.click("text=Verifica in due passaggi")
-    pg.fill(".sheet input[type=password]", ADMIN[1])
+    pg.fill(".sheet form input[type=password]", ADMIN[1])
     pg.click(".sheet button:has-text('Continua')")
     pg.wait_for_selector(".qr path")
     secret = pg.inner_text(".secret-key").strip()
@@ -82,5 +82,47 @@ def backups(browser):
     check(pg.evaluate("fetch('/api/admin/backups/..%2Freader.db').then(r=>r.status)") == 404, "no path tricks")
 
 
+def restore(browser):
+    pg = login(context(browser))
+    pg.click("button[aria-label=Impostazioni]")
+    pg.wait_for_timeout(700)
+    pg.click("text=Crea un backup ora")
+    pg.wait_for_timeout(800)
+    # A file that is not a backup is refused, and nothing changes.
+    bad = os.path.join(tempfile.mkdtemp(), "not-a-backup.db")
+    with open(bad, "wb") as f:
+        f.write(b"hello" * 100)
+    with pg.expect_file_chooser() as fc:
+        pg.click("text=Ripristina da un file…")
+    fc.value.set_files(bad)
+    pg.fill(".sheet form input[type=password]", ADMIN[1])
+    pg.click(".sheet form button[type=submit]")
+    pg.wait_for_selector(".sheet .text-danger:has-text('non è un database di Ebi Furai')")
+    check(True, "a file that is not a backup is refused")
+    pg.click(".sheet form button:has-text('Annulla')")
+    pg.wait_for_timeout(500)
+
+    # Something made after the backup: the restore takes it away.
+    uid = sql("SELECT id FROM users WHERE username = 'admin'")[0][0]
+    sql("INSERT INTO folders(user_id, name) VALUES(?, 'Dopo il backup')", uid)
+    pg.click("button[aria-label^='Ripristina il backup del']")
+    pg.fill(".sheet form input[type=password]", "wrong-password")
+    pg.click(".sheet form button[type=submit]")
+    pg.wait_for_selector(".sheet .text-danger:not(.hidden)")
+    check(sql("SELECT COUNT(*) FROM folders WHERE name = 'Dopo il backup'")[0][0] == 1, "a wrong password restores nothing")
+    pg.fill(".sheet form input[type=password]", ADMIN[1])
+    pg.click(".sheet form button[type=submit]")
+    pg.wait_for_selector(".restore-overlay")
+    check(True, "the app waits for the server to restart")
+    pg.wait_for_selector("#login input[name=username]:visible", timeout=30000)
+    check(True, "then it reloads and asks to sign in again")
+    check(sql("SELECT COUNT(*) FROM folders WHERE name = 'Dopo il backup'")[0][0] == 0, "the database is the backup's")
+    check(sql("PRAGMA integrity_check")[0][0] == "ok", "and it is sound")
+    pg2 = login(context(browser))
+    st = pg2.evaluate("fetch('/api/admin/backups').then(r=>r.json())")
+    check(len(st["items"]) >= 2, "the state before the restore was saved as a backup")
+    check(not pg.errors, "no page errors")
+
+
 if __name__ == "__main__":
-    run(two_step_verification, backups)
+    run(two_step_verification, backups, restore)

@@ -7,6 +7,7 @@ import { getPrefs, onPrefsChange } from '../prefs.js';
 import { centerEmpty, clear, collapsingTitle, emptyBlock, feedIcon, keepPlace, fullDate, h, icon, iconButton, readingMinutes, showError, toast } from '../ui.js';
 import { openAppearance } from './settings.js';
 import * as motion from '../motion.js';
+import { enableImageViewer } from './imageviewer.js';
 
 let ctx;
 let navDir = 0; // +1 next, -1 previous: direction of the content animation
@@ -147,6 +148,7 @@ function render() {
   if (html) {
     body.innerHTML = html; // sanitized server-side; CSP blocks scripts
     body.querySelectorAll('img').forEach((img) => img.addEventListener('error', () => img.remove(), { once: true }));
+    enableImageViewer(body);
   } else {
     body.append(h('p', { class: 'text-muted', text: t('The feed doesn\'t include the content of this article.') }));
     if (a.url) body.append(h('button', { class: 'btn btn-plain mt-2', onclick: toggleFull, text: t('Load the full text') }));

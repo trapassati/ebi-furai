@@ -1,5 +1,6 @@
 // Application bootstrap, layout and navigation.
 
+import './nozoom.js';
 import { t } from './i18n.js';
 import { get, post, setCsrf, setUnauthorizedHandler } from './api.js';
 import { loadPrefs } from './prefs.js';

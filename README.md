@@ -36,7 +36,7 @@ The interface is in **English and Italian**, chosen from the device's language.
 ## Features
 
 - **Reading**: unread, today, starred and all articles; folders; full text of truncated articles with one tap
-  (or always, per feed); reading time; search across everything you have.
+  (or always, per feed); reading time; pictures full screen with zoom; search across everything you have.
 - **Made for touch**: swipe to star or mark as read, pull to refresh, mark as read while scrolling,
   "mark the ones above / below as read", undo for every bulk action.
 - **Works offline**: the latest unread articles and the starred ones are kept on the device; what you do
@@ -52,7 +52,7 @@ The interface is in **English and Italian**, chosen from the device's language.
   connected devices you can sign out.
 - **Safe by default**: argon2id passwords, CSRF tokens, rate-limited sign-in, sanitized HTML, a strict
   Content-Security-Policy, SSRF protection for every outgoing request, images proxied through the server.
-- **Automatic backups** of the database, daily, downloadable from the app.
+- **Automatic backups** of the database, daily, downloadable and restorable from the app.
 
 ## Install
 
@@ -162,7 +162,13 @@ The server saves a compressed copy of the database every day, keeping the last 7
 see them in **Settings → Backup**, where they can make one now and download it. A backup contains every account
 and the feed passwords: keep it somewhere safe, and copy it away from the server now and then.
 
-To restore with Docker (the volume is `ebi-furai_data` when the folder is `ebi-furai`):
+To **restore**, in Settings → Backup tap the restore button next to a backup, or "Restore from a file…" for one
+you downloaded (also from another Ebi Furai installation), and confirm with your password. The file is checked
+first; then the current database is saved as a new backup (to go back if needed), the server restarts with the
+restored one, and every device signs in again. The whole database is replaced: every account, feed and article.
+
+If the app cannot start at all, restore by hand. With Docker (the volume is `ebi-furai_data` when the folder is
+`ebi-furai`):
 
 ```sh
 docker compose down

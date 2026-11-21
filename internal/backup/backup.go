@@ -87,7 +87,14 @@ func (m *Manager) due() bool {
 }
 
 // Create writes a new backup and removes the ones no longer kept.
-func (m *Manager) Create(ctx context.Context) (Info, error) {
+func (m *Manager) Create(ctx context.Context) (Info, error) { return m.create(ctx, true) }
+
+// SafetyCopy writes a backup without removing any: made before a restore,
+// it must not delete the backup about to be restored (only one a day is
+// kept, and that one may be from today).
+func (m *Manager) SafetyCopy(ctx context.Context) (Info, error) { return m.create(ctx, false) }
+
+func (m *Manager) create(ctx context.Context, prune bool) (Info, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if err := os.MkdirAll(m.dir, 0o700); err != nil {
@@ -95,6 +102,15 @@ func (m *Manager) Create(ctx context.Context) (Info, error) {
 	}
 	now := time.Now().In(m.loc)
 	name := prefix + now.Format(layout) + ".db.gz"
+	// Two backups in the same second (a safety copy right after a backup
+	// made by hand): the second one takes the next second's name.
+	for i := 0; i < 60; i++ {
+		if _, err := os.Stat(filepath.Join(m.dir, name)); errors.Is(err, os.ErrNotExist) {
+			break
+		}
+		now = now.Add(time.Second)
+		name = prefix + now.Format(layout) + ".db.gz"
+	}
 	raw := filepath.Join(m.dir, ".snapshot.db")
 	part := filepath.Join(m.dir, ".partial.gz")
 	os.Remove(raw)
@@ -114,7 +130,9 @@ func (m *Manager) Create(ctx context.Context) (Info, error) {
 	if err != nil {
 		return Info{}, err
 	}
-	m.prune()
+	if prune {
+		m.prune()
+	}
 	return Info{Name: name, Size: st.Size(), Time: now}, nil
 }
 

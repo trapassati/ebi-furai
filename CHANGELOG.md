@@ -2,6 +2,17 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.1.0
+
+- **Restore a backup from the app**: Settings → Backup has a restore button next to every backup, and
+  "Restore from a file…" for one saved elsewhere. The file is checked first (a sound Ebi Furai database, not
+  from a newer version, with an administrator), the current state is saved as a backup, then the server
+  restarts with the restored database and every device signs in again.
+- **Image viewer**: tap a picture in an article to open it full screen; pinch or double tap to zoom, drag to
+  move, swipe down to close. On the desktop: click, Ctrl + wheel or a trackpad pinch, Esc.
+- The app no longer zooms like a web page: pinch and double-tap zoom are off everywhere else.
+- Fixed: making a backup by hand twice in the same second wrote over the first one.
+
 ## 1.0.0
 
 First public release.

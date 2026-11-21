@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -44,14 +45,17 @@ type Server struct {
 	fetcher *feeds.Fetcher
 	limiter *auth.LoginLimiter
 	setup   setupState
-	images  *content.ImageSigner
-	static  *Static
-	push    *push.Service
-	ads     *adblock.Manager
-	adOn    *atomic.Bool
-	backups *backup.Manager // nil when BACKUPS=false
-	undo    undoStore
-	tickets ticketStore // logins waiting for the two-step code
+
+	restart   func()     // restarts the server (set by main)
+	restoring sync.Mutex // one restore at a time
+	images    *content.ImageSigner
+	static    *Static
+	push      *push.Service
+	ads       *adblock.Manager
+	adOn      *atomic.Bool
+	backups   *backup.Manager // nil when BACKUPS=false
+	undo      undoStore
+	tickets   ticketStore // logins waiting for the two-step code
 }
 
 func New(cfg *config.Config, st *store.Store, f *feeds.Fetcher, images *content.ImageSigner, static *Static, ps *push.Service,
@@ -163,6 +167,8 @@ func (s *Server) Routes() http.Handler {
 				r.Get("/backups", s.handleListBackups)
 				r.Post("/backups", s.handleCreateBackup)
 				r.Get("/backups/{name}", s.handleDownloadBackup)
+				r.Post("/backups/{name}/restore", s.handleRestoreBackup)
+				r.Post("/backups/restore", s.handleRestoreBackup)
 			})
 		})
 		r.NotFound(func(w http.ResponseWriter, _ *http.Request) {

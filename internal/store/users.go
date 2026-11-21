@@ -245,3 +245,10 @@ func (s *Store) SetUserLang(userID int64, lang string) error {
 	_, err := s.DB.Exec(`UPDATE users SET lang = ? WHERE id = ? AND lang <> ?`, lang, userID, lang)
 	return err
 }
+
+// DeleteAllSessions signs everyone out (after a restore: the sessions in
+// the backup belong to another moment).
+func (s *Store) DeleteAllSessions() error {
+	_, err := s.DB.Exec(`DELETE FROM sessions`)
+	return err
+}

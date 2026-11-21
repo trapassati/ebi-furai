@@ -66,5 +66,48 @@ def preferences_per_device(browser):
     check(b.evaluate(style) == ["1.65", "1"], "device B keeps its own settings")
 
 
+def image_viewer(browser):
+    pg = login(context(browser))
+    check(pg.evaluate("getComputedStyle(document.documentElement).touchAction") == "manipulation", "no double-tap zoom on the page")
+    prevented = "(() => { const e = new Event('gesturestart', { cancelable: true, bubbles: true }); document.body.dispatchEvent(e); return e.defaultPrevented; })()"
+    check(pg.evaluate(prevented), "the page's pinch zoom is stopped")
+    open_collection(pg, 0)
+    pg.locator("#pane-list .arow").first.click()
+    pg.wait_for_selector("#pane-reader .article-body")
+    # Article images come through the image proxy, which cannot reach this
+    # test server: a same-origin picture is put in the article instead.
+    pg.evaluate("""(() => { const b = document.querySelector('#pane-reader .article-body');
+      const p = document.createElement('p'); const i = document.createElement('img');
+      i.src = '/static/icons/icon-512.png'; i.alt = 'Un gambero'; p.append(i); b.prepend(p); })()""")
+    img = pg.locator("#pane-reader .article-body img[alt='Un gambero']").first
+    for _ in range(50):
+        if img.evaluate("(i) => i.naturalWidth") > 0:
+            break
+        pg.wait_for_timeout(100)
+    img.click()
+    pg.wait_for_selector(".iv[role=dialog] .iv-img")
+    check(pg.inner_text(".iv-caption") == "Un gambero", "the image opens full screen, with its caption")
+    pg.wait_for_timeout(600)
+    check(pg.evaluate("(() => { const e = new Event('gesturestart', { cancelable: true, bubbles: true }); document.querySelector('.iv-img').dispatchEvent(e); return !e.defaultPrevented; })()"),
+          "zooming is allowed in the viewer")
+    box = pg.locator(".iv-img").bounding_box()
+    pg.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    pg.keyboard.down("Control")
+    pg.mouse.wheel(0, -300)
+    pg.keyboard.up("Control")
+    pg.wait_for_timeout(300)
+    scale = pg.evaluate("gsap.getProperty(document.querySelector('.iv-img'), 'scale')")
+    check(scale > 2, f"it zooms in ({scale:.1f}x)")
+    pg.keyboard.press("Escape")
+    pg.wait_for_selector(".iv", state="detached")
+    check(pg.locator("#pane-reader .article-body").count() >= 1, "Esc closes it, the article stays open")
+    img.click()
+    pg.wait_for_selector(".iv .iv-close")
+    pg.wait_for_timeout(500)
+    pg.click(".iv .iv-close")
+    pg.wait_for_selector(".iv", state="detached")
+    check(True, "the close button closes it")
+    check(not pg.errors, "no page errors")
+
 if __name__ == "__main__":
-    run(mark_all_and_undo, counters_follow_server, empty_states_aligned, preferences_per_device)
+    run(mark_all_and_undo, counters_follow_server, empty_states_aligned, preferences_per_device, image_viewer)

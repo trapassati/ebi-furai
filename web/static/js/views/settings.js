@@ -479,14 +479,18 @@ function backupControls() {
       list.replaceChildren(h('div', { class: 'px-4 py-3 text-muted text-[0.9375rem]', text: t('No backup yet: the first one is made a few minutes after start.') }));
       return;
     }
-    list.replaceChildren(...st.items.map((b) => h('a', {
-      class: 'row-btn px-3 py-2.5', href: '/api/admin/backups/' + encodeURIComponent(b.name), download: b.name,
-    },
-    tile('o-circle-stack', 'indigo', 'sm'),
-    h('span', { class: 'flex-1 min-w-0' },
-      h('span', { class: 'block text-[1rem] truncate', text: backupDay.format(new Date(b.time)) }),
-      h('span', { class: 'block text-[0.8125rem] text-muted', text: sizeFmt(b.size) })),
-    icon('o-arrow-down-tray', 'w-5 h-5 text-faint flex-none'))));
+    list.replaceChildren(...st.items.map((b) => {
+      const when = backupDay.format(new Date(b.time));
+      return h('div', { class: 'flex items-center gap-3 px-3 py-2.5' },
+        tile('o-circle-stack', 'indigo', 'sm'),
+        h('span', { class: 'flex-1 min-w-0' },
+          h('span', { class: 'block text-[1rem] truncate', text: when }),
+          h('span', { class: 'block text-[0.8125rem] text-muted', text: sizeFmt(b.size) })),
+        h('button', { class: 'icon-btn', 'aria-label': t('Restore the backup of {0}', when), onclick: () => restoreBackup({ name: b.name, when }) },
+          icon('o-arrow-uturn-left', 'w-5 h-5')),
+        h('a', { class: 'icon-btn', href: '/api/admin/backups/' + encodeURIComponent(b.name), download: b.name, 'aria-label': t('Download') },
+          icon('o-arrow-down-tray', 'w-5 h-5')));
+    }));
   };
   const load = async () => { try { paint(await get('/api/admin/backups')); } catch (e) { info.textContent = ''; showError(e); } };
   make.addEventListener('click', async () => {
@@ -499,8 +503,74 @@ function backupControls() {
     } catch (e) { showError(e); }
     make.disabled = false;
   });
+  // Restore from a file saved elsewhere (or from another installation).
+  const fileInput = h('input', { type: 'file', accept: '.gz,.db,application/gzip,application/x-sqlite3', class: 'hidden' });
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files && fileInput.files[0];
+    fileInput.value = '';
+    if (file) restoreBackup({ file });
+  });
+  const fromFile = h('button', { class: 'btn btn-plain w-full', onclick: () => fileInput.click() },
+    icon('o-arrow-up-tray', 'w-5 h-5'), t('Restore from a file…'));
   load();
-  return h('div', { class: 'flex flex-col gap-3' }, info, list, make);
+  return h('div', { class: 'flex flex-col gap-3' }, info, list, make, fromFile, fileInput);
+}
+
+// Restoring replaces every account, feed and article with the backup's.
+// The server saves the current state first, then restarts: here we wait
+// for it and reload, and everyone signs in again.
+async function restoreBackup({ name, when, file }) {
+  const values = await formDialog({
+    title: t('Restore the backup?'),
+    message: (file ? t('The database will be replaced with the file "{0}".', file.name) : t('The database will be replaced with the backup of {0}.', when))
+      + ' ' + t('A copy of how things are now is saved first, so you can go back. Every device, this one too, will have to sign in again.'),
+    fields: [{ name: 'password', type: 'password', label: t('Confirm with your password'), autocomplete: 'current-password' }],
+    okLabel: t('Restore'),
+    destructive: true,
+    validate: async (v) => {
+      if (!v.password) return t('Enter the password');
+      if (file) {
+        const fd = new FormData();
+        fd.append('password', v.password); // first: a wrong one stops the upload early
+        fd.append('file', file);
+        await api('POST', '/api/admin/backups/restore', fd);
+      } else {
+        await post(`/api/admin/backups/${encodeURIComponent(name)}/restore`, { password: v.password });
+      }
+      return null;
+    },
+  });
+  if (values) waitForRestart();
+}
+
+function waitForRestart() {
+  const box = h('div', { class: 'restore-overlay', role: 'status' },
+    h('div', { class: 'restore-card' },
+      h('div', { class: 'restore-spinner', 'aria-hidden': 'true' }),
+      h('div', { class: 'text-[1.125rem] font-semibold', text: t('Restoring…') }),
+      h('div', { class: 'text-muted text-[0.9375rem]', text: t('The server is restarting with the backup. It takes a few seconds.') })));
+  document.body.append(box);
+  motion.swapIn([box.firstElementChild], 0);
+  const started = Date.now();
+  const poll = async () => {
+    // The old server answers until it stops: wait a moment before asking.
+    if (Date.now() - started > 2000) {
+      try {
+        const r = await fetch('/healthz', { cache: 'no-store' });
+        if (r.ok) {
+          try { await offline.wipe(); } catch { /* nothing saved */ }
+          location.reload();
+          return;
+        }
+      } catch { /* still restarting */ }
+    }
+    if (Date.now() - started > 120000) {
+      box.querySelector('.text-muted').textContent = t('The server is taking long: check its log, then reload the page.');
+      return;
+    }
+    setTimeout(poll, 1000);
+  };
+  poll();
 }
 
 function adControls(isAdmin) {
