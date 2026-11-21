@@ -61,7 +61,32 @@ def desktop_layout(browser):
     check(pg.locator(".settings-page .settings-section").count() == 1, "the settings show one section at a time")
     pg.click(".settings-nav-item:has-text('Account')")
     check(pg.locator(".settings-page :text('Cambia password')").count() == 1, "picking a section shows it")
+    # A window opened from the settings takes their place, header included.
+    pg.click(".settings-nav-item:has-text('Informazioni')")
+    pg.click(".settings-page button:has-text('Informazioni su')")
+    pg.wait_for_timeout(600)
+    back = pg.locator(".sheet >> nth=-1 >> button:has-text('Indietro')")
+    box = back.bounding_box()
+    top = pg.evaluate(f"document.elementFromPoint({box['x'] + box['width'] / 2}, {box['y'] + box['height'] / 2}).closest('button')?.textContent || ''")
+    check("Indietro" in top, "nothing covers the header of the window on top")
+    back.click()
+    pg.wait_for_selector(".settings-sheet:not(.covered)")
+    check(pg.locator(".settings-nav-item.on:has-text('Informazioni')").count() == 1, "Back returns to the settings, where they were")
     pg.keyboard.press("Escape")
+    check(not pg.errors, "no page errors")
+
+
+def empty_states_line_up(browser):
+    sql("UPDATE articles SET read = 1")
+    pg = login(context(browser, DESKTOP))
+    pg.wait_for_selector("#pane-list .empty-title")
+    pg.wait_for_timeout(600)
+    a = pg.locator("#pane-list .empty-title").bounding_box()["y"]
+    b = pg.locator("#pane-reader .empty-title").bounding_box()["y"]
+    check(abs(a - b) <= 2, f"\"Hai letto tutto\" and \"Nessun articolo aperto\" are on the same line ({a:.0f}, {b:.0f})")
+    check("in alto" in pg.inner_text("#pane-list .empty-title + p"), "the hint says where the list filter is on a computer")
+    sizes = pg.evaluate("[...document.querySelectorAll('.empty-title + p')].map((p) => getComputedStyle(p).fontSize)")
+    check(len(set(sizes)) == 1, f"the two hints have the same size ({sizes})")
     check(not pg.errors, "no page errors")
 
 
@@ -74,4 +99,4 @@ def touch_keeps_its_interface(browser):
 
 
 if __name__ == "__main__":
-    run(desktop_layout, touch_keeps_its_interface)
+    run(desktop_layout, empty_states_line_up, touch_keeps_its_interface)

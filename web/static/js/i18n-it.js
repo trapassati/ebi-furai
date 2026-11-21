@@ -107,6 +107,7 @@ export const IT = {
   "Choose": "Scegli",
   "Choose ": "Scegli ",
   "Choose FreshRSS or \"Google Reader API\" when adding the account.": "Scegli FreshRSS o «Google Reader API» quando aggiungi l'account.",
+  "Click the list at the top to see the articles you already read.": "Fai clic sull'elenco in alto per rivedere gli articoli già letti.",
   "Close": "Chiudi",
   "Close folder": "Chiudi cartella",
   "Close or go back": "Chiudi o torna indietro",

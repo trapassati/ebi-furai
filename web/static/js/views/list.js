@@ -1,6 +1,6 @@
 // Article list pane.
 
-import { dockInBar } from '../desk.js';
+import { dockInBar, isDesk } from '../desk.js';
 import { t } from '../i18n.js';
 import { get, isNetworkError, patch, post } from '../api.js';
 import { longPress, pullToRefresh, rowSwipe } from '../gestures.js';
@@ -324,7 +324,7 @@ function showEmpty() {
   else if (l.query) { title = t('No results'); hint = t('Try different words.'); art = 'o-magnifying-glass'; }
   else if (state.source === 'starred') { title = t('No starred articles'); hint = t('Swipe an article to the right to add it here.'); art = 's-star'; }
   else if (effectiveFilter() === 'starred') { title = t('No starred articles here'); hint = t('Swipe an article to the right to star it.'); art = 's-star'; }
-  else if (effectiveFilter() === 'unread') { title = t('You\'ve read everything'); hint = t('Tap the list at the bottom to see the articles you already read.'); art = 's-sparkles'; }
+  else if (effectiveFilter() === 'unread') { title = t('You\'ve read everything'); hint = isDesk() ? t('Click the list at the top to see the articles you already read.') : t('Tap the list at the bottom to see the articles you already read.'); art = 's-sparkles'; }
   const koi = art === 's-sparkles'
     ? h('img', { class: 'empty-koi', src: `/static/icons/koi.png?v=${encodeURIComponent(state.me.version || '')}`, alt: '' })
     : null;

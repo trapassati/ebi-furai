@@ -94,7 +94,8 @@ export function centerEmpty(scroller, el) {
   const r = el.getBoundingClientRect();
   const title = el.querySelector('.empty-title');
   const core = title ? title.getBoundingClientRect().bottom - r.top : r.height;
-  const d = [...scroller.parentElement.querySelectorAll('.dock')].map((x) => x.getBoundingClientRect())
+  // A bottom bar only: on the desktop the commands are in the top bar.
+  const d = [...scroller.parentElement.querySelectorAll('.dock')].filter((x) => !x.closest('.bar')).map((x) => x.getBoundingClientRect())
     .filter((x) => x.width > x.height && x.height > 0);
   const bottom = (d.length ? Math.min(...d.map((x) => x.top)) : box.bottom) - 16;
   let top = box.top + (box.height - core) / 2;
@@ -245,6 +246,20 @@ export function openSheet(content, opts = {}) {
   const sheet = h('div', { class: 'sheet' + (opts.wide ? ' wide' : '') + (opts.full ? ' full' : '') + (opts.cls ? ' ' + opts.cls : ''), role: 'dialog', 'aria-modal': 'true' },
     opts.full ? null : h('div', { class: 'sheet-grip' }), content);
   overlay.append(backdrop, sheet);
+  // Desktop: a window opened from another one (About from the settings)
+  // takes its place and its size, as a page of the same window, and gives
+  // it back when closed. The shade behind is not doubled.
+  const big = (el) => el.classList.contains('wide') || el.classList.contains('full');
+  const below = openSheets.length ? openSheets[openSheets.length - 1] : null;
+  const covers = isDesk() && below && below.el && big(sheet) && big(below.el);
+  if (covers) {
+    const r = below.el.getBoundingClientRect();
+    sheet.style.width = `${r.width}px`;
+    sheet.style.height = `${r.height}px`;
+    sheet.style.maxHeight = 'none';
+    backdrop.classList.add('still');
+    below.el.classList.add('covered');
+  }
   let closed = false;
   let resolveClosed;
   const done = new Promise((r) => { resolveClosed = r; });
@@ -255,10 +270,11 @@ export function openSheet(content, opts = {}) {
     if (i >= 0) openSheets.splice(i, 1);
     sheet.style.pointerEvents = 'none';
     backdrop.style.pointerEvents = 'none';
+    if (covers) below.el.classList.remove('covered');
     motion.sheetOut(backdrop, sheet).then(() => { backdrop.remove(); sheet.remove(); resolveClosed(); });
     if (opts.onClose) opts.onClose();
   };
-  const entry = { close, modal: !!opts.modal };
+  const entry = { close, modal: !!opts.modal, el: sheet };
   openSheets.push(entry);
   if (!opts.modal) backdrop.addEventListener('click', close);
   motion.sheetIn(backdrop, sheet);

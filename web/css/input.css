@@ -973,7 +973,7 @@ html.desk[data-theme="dark"] { --c-side: #0f1528; }
 .desk .a-title { font-size: calc(0.9375rem * var(--list-scale, 1)); -webkit-line-clamp: 2; }
 .desk .a-preview { font-size: calc(0.8125rem * var(--list-scale, 1)); margin-top: calc(2px * var(--ui)); }
 .desk .thumb, .desk .arow .thumb { width: calc(60px * var(--ui)); height: calc(60px * var(--ui)); border-radius: calc(6px * var(--ui)); }
-.desk .alist + div, .desk #pane-list .text-muted.text-sm { font-size: 0.8125rem; }
+.desk #pane-list .h-10.text-sm { font-size: 0.8125rem; }
 
 /* controls */
 .desk .icon-btn { min-width: calc(32px * var(--ui)); height: calc(32px * var(--ui)); border-radius: calc(8px * var(--ui)); }
@@ -1105,3 +1105,8 @@ body.resizing #pane-sources, body.resizing #pane-list { transition: none !import
 .desk .size-box .btn { min-height: calc(30px * var(--ui)) !important; padding: 0 calc(14px * var(--ui)) !important; border-radius: calc(7px * var(--ui)); }
 .desk .arow:focus-visible { outline-offset: calc(-2px * var(--ui)); }
 .desk .deck-card:focus-visible, .desk .feed-row:focus-visible, .desk .settings-nav-item:focus-visible { outline-offset: calc(-2px * var(--ui)); }
+/* each window is its own layer: the sticky header of one never shows
+   through the window opened on top of it */
+.sheet { isolation: isolate; }
+.desk .sheet.covered { visibility: hidden; }
+.desk .backdrop.still { background: transparent; }

@@ -2,6 +2,14 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.3.1
+
+- Desktop: a window opened from the settings (About, keyboard shortcuts, connected devices…) was drawn under
+  the header of the settings, which covered its "Done" and "Back" buttons. It now takes the place of the
+  settings window, at the same size, and "Back" returns to it.
+- Desktop: "You've read everything" sits on the same line as "No article open" again, and its hint says the
+  list filter is at the top, to click.
+
 ## 1.3.0
 
 - **A desktop interface on computers.** With a mouse or trackpad the app no longer looks like a phone app made
