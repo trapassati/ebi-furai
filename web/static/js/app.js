@@ -1,6 +1,7 @@
 // Application bootstrap, layout and navigation.
 
 import './nozoom.js';
+import * as desk from './desk.js';
 import { t } from './i18n.js';
 import { get, post, setCsrf, setUnauthorizedHandler } from './api.js';
 import { loadPrefs } from './prefs.js';
@@ -28,14 +29,16 @@ function computeCols() {
   const ui = window.__uiScale || 1;
   const w = window.innerWidth / ui;
   const hgt = window.innerHeight / ui;
-  const tablet = Math.min(w, hgt) >= 600;
-  if (tablet && w >= 1024 && w > hgt) return 3;
+  // A computer window has columns whatever its height.
+  const tablet = Math.min(w, hgt) >= 600 || desk.finePointer();
+  if (tablet && w >= 1024 && (w > hgt || desk.finePointer())) return 3;
   if (tablet && w >= 700) return 2;
   return 1;
 }
 
 function applyLayout() {
   const cols = computeCols();
+  desk.update(cols);
   if (cols !== state.cols) {
     const before = state.cols;
     state.cols = cols;
@@ -377,6 +380,7 @@ async function start(me) {
     mountSources(panes.sources, ctx);
     mountList(panes.list, ctx);
     mountReader(panes.reader, ctx);
+    desk.initResizers(panes);
     Object.values(panes).forEach(trackScroll);
     motion.setRevealHook(revealPane);
     edgeBack(panes.list, () => state.cols === 1 && state.view === 'list', () => panes.sources, () => back('list', { animated: false }));
@@ -443,7 +447,9 @@ async function init() {
   setTimeout(hideSplash, 10000); // never stay on the launch screen
   body.dataset.cols = String(computeCols());
   state.cols = computeCols();
+  desk.update(state.cols);
   window.addEventListener('resize', debounce(applyLayout, 100));
+  document.addEventListener('desk-recheck', () => { state.cols = 0; applyLayout(); });
   window.addEventListener('orientationchange', onRotate);
   if (screen.orientation) screen.orientation.addEventListener('change', onRotate);
 

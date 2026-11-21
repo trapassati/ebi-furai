@@ -151,6 +151,7 @@ export const IT = {
   "Done": "Fine",
   "Download": "Scarica",
   "Download images too": "Scarica anche le immagini",
+  "Drag to resize the column": "Trascina per allargare o stringere la colonna",
   "Duplicates are no longer merged": "I doppioni non si uniscono più",
   "Duplicates of new articles are merged": "I doppioni dei nuovi articoli si uniscono",
   "Ebi Furai is free software, released under the GNU Affero General Public License, version 3 (AGPL-3.0).": "Ebi Furai è software libero, distribuito con la licenza GNU Affero General Public License, versione 3 (AGPL-3.0).",

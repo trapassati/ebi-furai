@@ -2,6 +2,18 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.3.0
+
+- **A desktop interface on computers.** With a mouse or trackpad the app no longer looks like a phone app made
+  bigger: commands sit in a thin bar at the top of each column instead of floating at the bottom; the article
+  list is compact, with rows instead of cards; the sidebar lists the collections and feeds as in a mail app;
+  menus (right click, "Add", order, pickers) open where you click and work with the arrow keys; dialogs have a
+  measured size and a lighter shade behind; buttons are small and show what they do, with their shortcut,
+  when hovered. The settings become a window with the sections on the left.
+- **Resizable columns**: drag the edge of the sidebar or of the list; double click to go back to the standard
+  width. Remembered on each computer.
+- iPhone and iPad (touch) keep their interface as it was.
+
 ## 1.2.0
 
 - **Reeder, NetNewsWire and other apps**: Ebi Furai now offers the Google Reader API (as FreshRSS does), so native

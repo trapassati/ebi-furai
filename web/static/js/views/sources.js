@@ -81,7 +81,7 @@ function header(s) {
   }
   // App name with the shrimp (transparent).
   const v = encodeURIComponent(state.me.version || '');
-  return h('div', { class: 'px-5 pt-1' },
+  return h('div', { class: 'home-head px-5 pt-1' },
     h('h1', { class: 'page-title home-title', 'aria-label': state.me.app_name },
       h('img', { class: 'home-logo', src: `/static/icons/shrimp.png?v=${v}`, alt: '' }),
       wordmark()),
@@ -150,6 +150,7 @@ function feedRow(feed, nested, max) {
     dataset: { key: src },
     class: 'row-btn feed-row ' + (nested ? 'nested ' : '') + (isSelected(src) ? 'selected' : ''),
     role: 'button', tabindex: '0',
+    title: feed.error_count ? meta : undefined, // on the desktop the line under the name is hidden
     onclick: () => { if (!row.dataset.longpress) ctx.selectSource(src); },
   },
   badge(feed, nested),

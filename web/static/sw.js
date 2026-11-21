@@ -17,6 +17,7 @@ const SHELL = [
   '/static/js/api.js',
   '/static/js/ui.js',
   '/static/js/nozoom.js',
+  '/static/js/desk.js',
   '/static/js/state.js',
   '/static/js/prefs.js',
   '/static/js/gestures.js',

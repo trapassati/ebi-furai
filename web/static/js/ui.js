@@ -1,6 +1,7 @@
 import { locale, t } from './i18n.js';
 import { isNetworkError } from './api.js';
 import * as motion from './motion.js';
+import { isDesk, popoverMenu } from './desk.js';
 
 // DOM helpers, icons, toasts, sheets and dialogs.
 
@@ -241,7 +242,7 @@ export function closeTopSheet() {
 export function openSheet(content, opts = {}) {
   const overlay = document.getElementById('overlay');
   const backdrop = h('div', { class: 'backdrop' });
-  const sheet = h('div', { class: 'sheet' + (opts.wide ? ' wide' : '') + (opts.full ? ' full' : ''), role: 'dialog', 'aria-modal': 'true' },
+  const sheet = h('div', { class: 'sheet' + (opts.wide ? ' wide' : '') + (opts.full ? ' full' : '') + (opts.cls ? ' ' + opts.cls : ''), role: 'dialog', 'aria-modal': 'true' },
     opts.full ? null : h('div', { class: 'sheet-grip' }), content);
   overlay.append(backdrop, sheet);
   let closed = false;
@@ -271,6 +272,7 @@ export function tile(name, tone = 'sky', size = '') {
 
 // actionSheet({title, message, actions: [{label, icon, tone, destructive, checked, disabled, onSelect}]})
 export function actionSheet({ title, message, actions }) {
+  if (isDesk()) return popoverMenu({ title, message, actions });
   return new Promise((resolve) => {
     let chosen = null;
     const list = h('div', { class: 'group' },

@@ -1,5 +1,6 @@
 // Article list pane.
 
+import { dockInBar } from '../desk.js';
 import { t } from '../i18n.js';
 import { get, isNetworkError, patch, post } from '../api.js';
 import { longPress, pullToRefresh, rowSwipe } from '../gestures.js';
@@ -14,6 +15,7 @@ let titleEl, subtitleEl, smallTitle, listEl, sentinel, emptyEl, scroller, filter
 let observer;
 
 export function mountList(pane, context) {
+  let barSlot;
   ctx = context;
   titleEl = h('h1', { class: 'page-title !text-[1.875rem] truncate' });
   subtitleEl = h('div', { class: 'page-sub truncate' });
@@ -22,6 +24,7 @@ export function mountList(pane, context) {
       h('button', { class: 'gbtn glass back-list', 'aria-label': t('Back'), onclick: () => ctx.back('list') },
         icon('o-chevron-left')),
       smallTitle = h('div', { class: 'bar-small-title' }),
+      barSlot = h('div', { class: 'bar-slot' }),
       h('button', { class: 'gbtn glass', 'aria-label': t('Order'), onclick: orderMenu }, icon('o-ellipsis-horizontal'))));
 
   // Bottom dock: mark all read | starred, unread, all | search
@@ -29,7 +32,7 @@ export function mountList(pane, context) {
   filterBtns = [fbtn('starred', t('Starred only')), fbtn('unread', t('Unread|filter')), fbtn('all', t('All articles'))];
   searchBtn = h('button', { class: 'gbtn glass', 'aria-label': t('Search'), onclick: toggleSearch }, icon('o-magnifying-glass'));
   const dock = h('footer', { class: 'dock' },
-    h('button', { class: 'gbtn glass', 'aria-label': t('Mark all as read'), onclick: markAllRead }, icon('o-check-circle')),
+    h('button', { class: 'gbtn glass', 'aria-label': t('Mark all as read'), dataset: { key: '⇧A' }, onclick: markAllRead }, icon('o-check-circle')),
     h('div', { class: 'dock-group glass', role: 'group', 'aria-label': t('Filter') }, filterBtns),
     searchBtn);
 
@@ -47,7 +50,7 @@ export function mountList(pane, context) {
     h('div', { class: 'field-wrap flex-1' }, icon('o-magnifying-glass'), searchInput),
     h('button', { class: 'icon-btn text-[0.9375rem] font-medium px-2', onclick: toggleSearch, text: t('Cancel') }));
 
-  const head = h('div', { class: 'pb-4' },
+  const head = h('div', { class: 'list-head pb-4' },
     h('div', { class: 'px-5' }, titleEl, subtitleEl),
     searchBox);
 
@@ -56,7 +59,8 @@ export function mountList(pane, context) {
   emptyEl = h('div', { class: 'hidden px-8 text-center' });
   scroller = h('div', { class: 'pane-scroll' }, h('div', { class: 'safe-x' }, head, listEl, emptyEl, sentinel, h('div', { class: 'dock-pad' })));
   new ResizeObserver(() => centerEmpty(scroller, emptyEl)).observe(scroller);
-  pane.append(bar, scroller, dock);
+  pane.append(bar, scroller);
+  dockInBar(pane, dock, barSlot);
   collapsingTitle(scroller, smallTitle, () => 40);
   keepPlace(scroller, '.arow');
   setupScrollRead();
@@ -359,7 +363,7 @@ function rowEl(a) {
     ? h('img', { class: 'thumb', src: a.thumbnail, alt: '', loading: 'lazy', decoding: 'async' }) : null;
   if (thumb) thumb.addEventListener('error', () => thumb.remove(), { once: true });
   const main = h('div', { class: 'arow-main px-4 pt-3.5 pb-4' },
-    h('div', { class: 'flex items-center gap-2 mb-2' },
+    h('div', { class: 'a-head flex items-center gap-2 mb-2' },
       h('span', { class: 'unread-dot' }),
       feedIcon(a.feed_id, a.feed_has_icon, a.feed_title, 'small'),
       h('div', { class: 'crumbs flex-1' },

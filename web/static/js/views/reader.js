@@ -1,5 +1,6 @@
 // Reader pane: article content, actions and navigation.
 
+import { dockInBar } from '../desk.js';
 import { t } from '../i18n.js';
 import { get, patch, post } from '../api.js';
 import { state, findFeed } from '../state.js';
@@ -22,24 +23,26 @@ let loadingFull = false;
 export function mountReader(pane, context) {
   ctx = context;
   feedTitleEl = h('div', { class: 'bar-small-title !text-[0.9375rem]' });
-  prevBtn = iconButton('o-chevron-up', t('Previous article'), () => step(-1));
-  nextBtn = iconButton('o-chevron-down', t('Next article'), () => step(1));
+  prevBtn = iconButton('o-chevron-up', t('Previous article'), () => step(-1), { attrs: { 'data-key': 'K' } });
+  nextBtn = iconButton('o-chevron-down', t('Next article'), () => step(1), { attrs: { 'data-key': 'J' } });
+  const barSlot = h('div', { class: 'bar-slot' });
   const bar = h('header', { class: 'bar' },
     h('div', { class: 'bar-inner' },
       h('button', { class: 'gbtn glass back-reader', 'aria-label': t('Back'), onclick: () => ctx.back('reader') },
         icon('o-chevron-left')),
-      h('button', { class: 'gbtn glass sidebar-btn', 'aria-label': t('Show or hide the column'), onclick: () => ctx.toggleSidebar() },
+      h('button', { class: 'gbtn glass sidebar-btn', 'aria-label': t('Show or hide the column'), dataset: { key: 'B' }, onclick: () => ctx.toggleSidebar() },
         icon('x-sidebar')),
       feedTitleEl,
+      barSlot,
       h('div', { class: 'gpair glass' }, prevBtn, nextBtn)));
 
   wrap = h('article', { class: 'reader-wrap' });
   scroller = h('div', { class: 'pane-scroll' }, h('div', { class: 'safe-x' }, wrap));
 
-  const seg = (name, label, fn) => h('button', { class: 'seg-btn', 'aria-label': label, onclick: fn }, icon(name));
-  btnRead = seg('o-check-circle', t('Read / unread'), toggleRead);
-  btnStar = seg('o-star', t('Starred|one'), toggleStar);
-  btnFull = seg('o-document-text', t('Full text'), toggleFull);
+  const seg = (name, label, fn, key) => h('button', { class: 'seg-btn', 'aria-label': label, dataset: key ? { key } : undefined, onclick: fn }, icon(name));
+  btnRead = seg('o-check-circle', t('Read / unread'), toggleRead, 'M');
+  btnStar = seg('o-star', t('Starred|one'), toggleStar, 'S');
+  btnFull = seg('o-document-text', t('Full text'), toggleFull, 'F');
   // Navigation group, shown only when the controls sit on the side
   // (iPhone Duo open): previous/next and the page of the book layout.
   navPrev = seg('o-chevron-up', t('Previous article'), () => step(-1));
@@ -50,9 +53,10 @@ export function mountReader(pane, context) {
     h('div', { class: 'dock-group wide glass' },
       btnRead, btnStar, btnFull,
       h('button', { class: 'seg-btn font-semibold text-[1.1875rem]', 'aria-label': t('Appearance'), onclick: openAppearance, text: 'Aa' }),
-      seg('o-arrow-top-right-on-square', t('Open on the site'), openOriginal),
+      seg('o-arrow-top-right-on-square', t('Open on the site'), openOriginal, 'V'),
       seg('o-arrow-up-on-square', t('Share'), share)));
-  pane.append(bar, scroller, toolbar);
+  pane.append(bar, scroller);
+  dockInBar(pane, toolbar, barSlot);
   motion.smoothScroll(scroller);
   new ResizeObserver(() => { if (emptyEl) centerEmpty(scroller, emptyEl); }).observe(scroller);
   // The feed name joins the bar once the article header scrolls away.

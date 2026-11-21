@@ -5,7 +5,7 @@ from lib import *
 
 def row_menu(pg, nth):
     pg.locator("#pane-list .arow").nth(nth).click(button="right")
-    pg.wait_for_selector(".sheet button:has-text('Segna come letti quelli sopra')")
+    pg.wait_for_selector(".menu button:has-text('Segna come letti quelli sopra')")
 
 
 def mark_above_and_below(browser):
@@ -13,7 +13,7 @@ def mark_above_and_below(browser):
     open_collection(pg, 0)  # Non letti, newest first
     pg.wait_for_timeout(500)
     row_menu(pg, 4)
-    pg.click(".sheet button:has-text('Segna come letti quelli sopra')")
+    pg.click(".menu button:has-text('Segna come letti quelli sopra')")
     pg.wait_for_selector(".toast:has-text('4 segnati come letti')")
     check(unread() == 116, "the 4 articles above are read")
     check(pg.locator("#pane-list .arow.read").count() == 4, "and greyed in the list")
@@ -23,7 +23,7 @@ def mark_above_and_below(browser):
     check(unread() == 120, "Annulla brings them back")
     check(pg.locator("#pane-list .arow.read").count() == 0, "on screen too")
     row_menu(pg, 9)
-    pg.click(".sheet button:has-text('Segna come letti quelli sotto')")
+    pg.click(".menu button:has-text('Segna come letti quelli sotto')")
     pg.wait_for_selector(".toast:has-text('110 segnati come letti')")
     check(unread() == 10, "below marks also the articles not loaded yet")
     pg.wait_for_timeout(800)
@@ -41,7 +41,7 @@ def oldest_first(browser):
     first = pg.inner_text("#pane-list .arow >> nth=0 >> .a-title")
     check(first == "Articolo numero 120", f"oldest first ({first})")
     row_menu(pg, 3)
-    pg.click(".sheet button:has-text('Segna come letti quelli sopra')")
+    pg.click(".menu button:has-text('Segna come letti quelli sopra')")
     pg.wait_for_selector(".toast:has-text('3 segnati come letti')")
     read = [r[0] for r in sql("SELECT title FROM articles WHERE read = 1 ORDER BY id")]
     check(sorted(read) == sorted(["Articolo numero 120", "Articolo numero 119", "Articolo numero 118"]), f"above follows the order of the list ({read})")

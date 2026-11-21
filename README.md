@@ -46,8 +46,9 @@ The interface is in **English and Italian**, chosen from the device's language.
 - **Tidy feeds**: keyword filters that hide or mark as read ("football", "horoscope*"), duplicates merged
   across feeds (a newspaper and Google News), ad filtering with EasyList, per-feed short names.
 - **Feed health**: feeds that stop working are listed with what the error means and what to do.
-- **iPad, iPhone Duo and desktop layouts**: two or three columns, keyboard shortcuts, interface scale for
-  large screens, side-by-side pages on foldables.
+- **iPad, iPhone Duo and desktop layouts**: two or three columns, side-by-side pages on foldables. On a
+  computer it works like a desktop app: commands at the top of each column, a compact list, menus where you
+  click, tooltips with the keyboard shortcuts, columns you can resize, interface scale for large screens.
 - **Your favourite app too**: Reeder, NetNewsWire and other apps sync through the Google Reader API, with app
   passwords you can revoke one by one.
 - **Several users**, each with their own feeds; two-step verification (TOTP) with recovery codes;
