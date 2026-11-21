@@ -34,7 +34,7 @@ const ago = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
 function since(ts) {
   const s = Math.round(ts - Date.now() / 1000);
   const abs = Math.abs(s);
-  if (abs < 120) return 'adesso';
+  if (abs < 120) return ago.format(0, 'second');
   if (abs < 3600) return ago.format(Math.round(s / 60), 'minute');
   if (abs < 86400) return ago.format(Math.round(s / 3600), 'hour');
   return ago.format(Math.round(s / 86400), 'day');

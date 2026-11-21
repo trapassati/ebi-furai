@@ -25,6 +25,7 @@ import (
 	"github.com/trapassati/ebi-furai/internal/feeds"
 	"github.com/trapassati/ebi-furai/internal/push"
 	"github.com/trapassati/ebi-furai/internal/store"
+	"github.com/trapassati/ebi-furai/internal/update"
 	"github.com/trapassati/ebi-furai/web"
 )
 
@@ -140,6 +141,11 @@ func run() error {
 		slog.Warn("no users yet: open the app in a browser and create the administrator with this setup code",
 			"setup_code", auth.FormatSetupCode(setupCode), "address", cfg.ListenAddr)
 		fmt.Fprintf(os.Stderr, "\n  Ebi Furai setup code: %s\n  Open the app in a browser to create the administrator.\n\n", auth.FormatSetupCode(setupCode))
+	}
+	if cfg.UpdateCheck {
+		uc := update.New(version, cfg.UpdateCheckURL)
+		apiSrv.SetUpdates(uc)
+		go uc.Run(ctx)
 	}
 	if cfg.Backups {
 		bk := backup.NewManager(st.DB, cfg.BackupDir, cfg.BackupDaily, cfg.BackupWeekly, cfg.Location)

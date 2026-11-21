@@ -48,6 +48,8 @@ The interface is in **English and Italian**, chosen from the device's language.
 - **Feed health**: feeds that stop working are listed with what the error means and what to do.
 - **iPad, iPhone Duo and desktop layouts**: two or three columns, keyboard shortcuts, interface scale for
   large screens, side-by-side pages on foldables.
+- **Your favourite app too**: Reeder, NetNewsWire and other apps sync through the Google Reader API, with app
+  passwords you can revoke one by one.
 - **Several users**, each with their own feeds; two-step verification (TOTP) with recovery codes;
   connected devices you can sign out.
 - **Safe by default**: argon2id passwords, CSRF tokens, rate-limited sign-in, sanitized HTML, a strict
@@ -129,7 +131,21 @@ Either way the app needs a **stable address**: a web app installed on the Home S
 
 The app shows these steps itself the first time it's opened in Safari.
 
-## Configuration
+## Reeder, NetNewsWire and other apps
+
+Ebi Furai speaks the Google Reader API, the one of FreshRSS, so native apps can show your feeds and keep read and
+starred articles in sync with the web app: Reeder, NetNewsWire, ReadKit, FeedMe, Fluent Reader and others.
+
+1. In Ebi Furai: Settings → **Reeder and other apps** → New app password. Each app gets its own password, which
+   works with two-step verification on and can be revoked without touching the others.
+2. In the app, add a **FreshRSS** account (or "Google Reader API") with:
+   - server: `https://YOUR-ADDRESS/api/greader.php`
+   - username: your Ebi Furai username
+   - password: the app password
+
+Apps see the same articles as the web app (not the ones hidden by filters; duplicates only once) and load the
+pictures straight from the sites, not through the image proxy.
+
 
 Every setting is optional. With Docker they go in `.env`; with the service in
 `/etc/ebi-furai/ebi-furai.env` (then `sudo systemctl restart ebi-furai`).
@@ -154,6 +170,7 @@ Every setting is optional. With Docker they go in `.env`; with the service in
 | `BACKUPS` | `true` | daily backups |
 | `BACKUP_KEEP_DAILY`, `BACKUP_KEEP_WEEKLY` | `7`, `4` | how many are kept |
 | `BACKUP_DIR` | `DATA_DIR/backups` | where they go |
+| `UPDATE_CHECK` | `true` | look for a new release on GitHub twice a day and tell the administrators |
 | `SOURCE_URL` | this repository | where the source code is offered (see [License](#license)) |
 
 ## Backups and restore
@@ -185,7 +202,9 @@ With the service: `sudo systemctl stop ebi-furai`, `gunzip -c BACKUP.db.gz | sud
 - Docker: `docker compose pull && docker compose up -d`
 - Service: run the install command again.
 
-Installed apps pick up the new version the next time they are opened.
+Installed apps pick up the new version the next time they are opened. When a new release is out, administrators
+see it when they open the app, with what changed and the command for their installation (`UPDATE_CHECK=false`
+turns this off: then the server never contacts GitHub).
 
 ## Locked out?
 

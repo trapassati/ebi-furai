@@ -38,7 +38,7 @@ FROM gcr.io/distroless/static-debian13:nonroot
 COPY --from=build /out/ebi-furai /ebi-furai
 COPY --from=build /out/licenses /licenses
 COPY --from=build --chown=nonroot:nonroot /out/data /data
-ENV DATA_DIR=/data LISTEN_ADDR=:9099
+ENV DATA_DIR=/data LISTEN_ADDR=:9099 EBI_FURAI_INSTALL=docker
 EXPOSE 9099
 VOLUME /data
 USER nonroot:nonroot

@@ -16,6 +16,7 @@ import * as offline from './offline/index.js';
 import * as push from './push.js';
 import * as motion from './motion.js';
 import { maybeShowInstallHint } from './install.js';
+import { checkForUpdate } from './views/update.js';
 
 const body = document.body;
 const panes = {};
@@ -407,6 +408,7 @@ async function start(me) {
   offline.syncNow();
   push.refresh();
   maybeShowInstallHint();
+  checkForUpdate({ force: true });
 }
 
 // Reacts to the offline layer: status badges, and fresh data on reconnect.
@@ -453,6 +455,7 @@ async function init() {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible' || !state.me) return;
     reloadSources();
+    checkForUpdate();
     if (Date.now() - offline.status.lastSync > 10 * 60 * 1000) offline.syncNow();
     // After a long pause show fresh articles, unless the user is reading
     // one on a phone or has scrolled down the list (keep their place).

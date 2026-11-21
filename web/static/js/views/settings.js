@@ -10,6 +10,8 @@ import * as push from '../push.js';
 import * as motion from '../motion.js';
 import { canInstall, showInstallHint } from '../install.js';
 import { openAbout } from './about.js';
+import { openApps } from './apps.js';
+import { openUpdate } from './update.js';
 import { failingCount, openFeedHealth } from './health.js';
 import { openFilters } from './filters.js';
 import { openSessions, openTwoFactor, twoFactorLabel } from './security.js';
@@ -149,6 +151,7 @@ export function openSettings(ctx) {
       rowButton('o-key', 'sky', t('Change password'), changePassword),
       twoFactorRow(),
       rowButton('o-device-phone-mobile', 'indigo', t('Connected devices'), openSessions),
+      rowButton('o-squares-2x2', 'sunset', t('Reeder and other apps'), openApps),
       canInstall() ? rowButton('o-plus', 'indigo', t('Add to Home Screen'), () => { sheet.close(); setTimeout(showInstallHint, 350); }) : null,
       rowButton('o-arrow-right-start-on-rectangle', 'rose', t('Sign out'), logout, 'text-danger'))),
     section(t('Notifications'), notifyControls()),
@@ -167,6 +170,7 @@ export function openSettings(ctx) {
     section(t('About'), h('div', { class: 'group' },
       window.matchMedia('(hover: hover) and (pointer: fine)').matches || navigator.keyboard
         ? rowButton('o-command-line', 'plain', t('Keyboard shortcuts'), showShortcuts) : null,
+      state.update ? rowButton('o-sparkles', 'aurora', t('Update available: {0}', state.update.latest), () => openUpdate(state.update)) : null,
       rowButton('o-information-circle', 'plain', t('About Ebi Furai'), openAbout))),
     h('div', { class: 'text-center text-[0.75rem] text-muted pt-10', text: t('{0}, version {1}', me.app_name, me.version) }));
 

@@ -2,6 +2,17 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.2.0
+
+- **Reeder, NetNewsWire and other apps**: Ebi Furai now offers the Google Reader API (as FreshRSS does), so native
+  apps can show your feeds and sync read and starred articles, folders and subscriptions. Apps sign in with
+  **app passwords** (Settings → Reeder and other apps): one per app, shown once, working with two-step
+  verification on, revocable one by one, with when and from where each was last used.
+- **Update notice**: the server looks for a new release on GitHub twice a day; administrators see it when they
+  open the app, with the release notes and the command for their installation (Docker or Linux service).
+  `UPDATE_CHECK=false` turns it off.
+- Fixed: "now" in the list of connected devices was always in Italian.
+
 ## 1.1.0
 
 - **Restore a backup from the app**: Settings → Backup has a restore button next to every backup, and

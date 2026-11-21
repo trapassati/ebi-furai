@@ -39,6 +39,8 @@ type Config struct {
 	BackupDir       string // where they go (default DATA_DIR/backups)
 	BackupDaily     int    // how many daily copies are kept
 	BackupWeekly    int    // how many weekly copies are kept after those
+	UpdateCheck     bool   // ask GitHub now and then for a newer release
+	UpdateCheckURL  string // where (tests; default the official repository)
 }
 
 func (c *Config) DBPath() string { return filepath.Join(c.DataDir, "reader.db") }
@@ -46,13 +48,14 @@ func (c *Config) DBPath() string { return filepath.Join(c.DataDir, "reader.db") 
 // Load reads the configuration from the environment and applies defaults.
 func Load() (*Config, error) {
 	c := &Config{
-		ListenAddr:    env("LISTEN_ADDR", ":9099"),
-		DataDir:       env("DATA_DIR", "data"),
-		AppName:       env("APP_NAME", "Ebi Furai"),
-		SourceURL:     env("SOURCE_URL", DefaultSourceURL),
-		AdminUser:     strings.TrimSpace(os.Getenv("ADMIN_USER")),
-		AdminPassword: os.Getenv("ADMIN_PASSWORD"),
-		VAPIDSubject:  strings.TrimSpace(os.Getenv("VAPID_SUBJECT")),
+		ListenAddr:     env("LISTEN_ADDR", ":9099"),
+		DataDir:        env("DATA_DIR", "data"),
+		AppName:        env("APP_NAME", "Ebi Furai"),
+		SourceURL:      env("SOURCE_URL", DefaultSourceURL),
+		AdminUser:      strings.TrimSpace(os.Getenv("ADMIN_USER")),
+		AdminPassword:  os.Getenv("ADMIN_PASSWORD"),
+		VAPIDSubject:   strings.TrimSpace(os.Getenv("VAPID_SUBJECT")),
+		UpdateCheckURL: strings.TrimSpace(os.Getenv("UPDATE_CHECK_URL")),
 	}
 	for _, u := range strings.Split(os.Getenv("AD_FILTER_LISTS"), ",") {
 		if u = strings.TrimSpace(u); u != "" {
@@ -91,6 +94,7 @@ func Load() (*Config, error) {
 		{"TRUST_CF_HEADER", &c.TrustCFHeader, false},
 		{"IMAGE_PROXY", &c.ImageProxy, true},
 		{"BACKUPS", &c.Backups, true},
+		{"UPDATE_CHECK", &c.UpdateCheck, true},
 	} {
 		if *b.dst, err = envBool(b.key, b.def); err != nil {
 			return nil, err

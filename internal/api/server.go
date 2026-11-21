@@ -29,6 +29,7 @@ import (
 	"github.com/trapassati/ebi-furai/internal/i18n"
 	"github.com/trapassati/ebi-furai/internal/push"
 	"github.com/trapassati/ebi-furai/internal/store"
+	"github.com/trapassati/ebi-furai/internal/update"
 )
 
 const (
@@ -46,16 +47,18 @@ type Server struct {
 	limiter *auth.LoginLimiter
 	setup   setupState
 
-	restart   func()     // restarts the server (set by main)
-	restoring sync.Mutex // one restore at a time
-	images    *content.ImageSigner
-	static    *Static
-	push      *push.Service
-	ads       *adblock.Manager
-	adOn      *atomic.Bool
-	backups   *backup.Manager // nil when BACKUPS=false
-	undo      undoStore
-	tickets   ticketStore // logins waiting for the two-step code
+	restart    func()     // restarts the server (set by main)
+	restoring  sync.Mutex // one restore at a time
+	images     *content.ImageSigner
+	static     *Static
+	push       *push.Service
+	ads        *adblock.Manager
+	adOn       *atomic.Bool
+	backups    *backup.Manager // nil when BACKUPS=false
+	undo       undoStore
+	tickets    ticketStore     // logins waiting for the two-step code
+	apiTouched apiTouch        // when app passwords were last marked as used
+	updates    *update.Checker // nil when UPDATE_CHECK=false
 }
 
 func New(cfg *config.Config, st *store.Store, f *feeds.Fetcher, images *content.ImageSigner, static *Static, ps *push.Service,
@@ -86,8 +89,15 @@ func (s *Server) Routes() http.Handler {
 
 	r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("ok")) })
 
+	// The Google Reader API, for apps like Reeder and NetNewsWire.
+	r.Group(func(r chi.Router) {
+		r.Use(noStore)
+		s.greaderRoutes(r)
+	})
+
 	r.Route("/api", func(r chi.Router) {
 		r.Use(noStore, withLang)
+		r.Route("/greader.php", s.greaderRoutes) // where apps expecting FreshRSS look
 		r.Get("/setup", s.handleSetupStatus)
 		r.Post("/setup", s.handleSetup)
 		r.Post("/login", s.handleLogin)
@@ -107,6 +117,9 @@ func (s *Server) Routes() http.Handler {
 			r.Get("/me/sessions", s.handleSessions)
 			r.Delete("/me/sessions/{id}", s.handleDeleteSession)
 			r.Post("/me/sessions/logout-others", s.handleLogoutOthers)
+			r.Get("/me/app-passwords", s.handleAppPasswords)
+			r.Post("/me/app-passwords", s.handleCreateAppPassword)
+			r.Delete("/me/app-passwords/{id}", s.handleDeleteAppPassword)
 			r.Put("/me/prefs", s.handlePrefs)
 			r.Get("/about", s.handleAbout)
 
@@ -164,6 +177,7 @@ func (s *Server) Routes() http.Handler {
 				r.Delete("/users/{id}", s.handleDeleteUser)
 				r.Put("/adfilter", s.handleAdFilterSet)
 				r.Post("/adfilter/update", s.handleAdFilterUpdate)
+				r.Get("/update", s.handleUpdate)
 				r.Get("/backups", s.handleListBackups)
 				r.Post("/backups", s.handleCreateBackup)
 				r.Get("/backups/{name}", s.handleDownloadBackup)
@@ -407,7 +421,7 @@ func storeError(w http.ResponseWriter, err error) {
 func readJSON(w http.ResponseWriter, r *http.Request, v any) bool {
 	mt, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if mt != "application/json" {
-		writeError(w, http.StatusUnsupportedMediaType, "Content-Type deve essere application/json")
+		writeError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json")
 		return false
 	}
 	dec := json.NewDecoder(io.LimitReader(r.Body, maxJSONBody))

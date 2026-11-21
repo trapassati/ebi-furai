@@ -4,6 +4,9 @@ package i18n
 // the code. %s and %d are placeholders: what they stand for is kept (and
 // translated too, when it is itself a known message).
 var it = map[string]string{
+	"too many app passwords: remove one you no longer use":                     "troppe password per le app: eliminane una che non usi più",
+	"give it a name, for example the app it is for":                            "dalle un nome, per esempio l'app a cui serve",
+	"Content-Type must be application/json":                                    "Content-Type deve essere application/json",
 	"a restore is already in progress":                                         "è già in corso un ripristino",
 	"the file is not an Ebi Furai database":                                    "il file non è un database di Ebi Furai",
 	"the database in the file is damaged":                                      "il database nel file è danneggiato",
