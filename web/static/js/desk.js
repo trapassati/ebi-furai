@@ -70,6 +70,7 @@ export function menuOpen() { return openMenus.length > 0; }
 export function popoverMenu({ title, message, actions }) {
   return new Promise((resolve) => {
     const anchor = anchorRect();
+    const byKeyboard = !anchor || !last.x;
     const items = actions.map((a) => h('button', {
       type: 'button', role: 'menuitem',
       class: 'menu-item' + (a.destructive ? ' danger' : ''),
@@ -118,7 +119,9 @@ export function popoverMenu({ title, message, actions }) {
       const end = () => menu.remove();
       if (motion.enabled()) window.gsap.to(menu, { opacity: 0, scale: 0.97, duration: 0.12, ease: 'power2.in', onComplete: end });
       else end();
-      if (prevFocus && prevFocus.focus && !chosen) prevFocus.focus({ preventScroll: true });
+      // Back to where the keyboard was; after a click, nothing gets a ring.
+      if (byKeyboard && prevFocus && prevFocus.focus && !chosen) prevFocus.focus({ preventScroll: true });
+      else if (menu.contains(document.activeElement)) document.activeElement.blur();
       resolve(chosen);
       if (chosen && chosen.onSelect) chosen.onSelect();
     };
@@ -152,7 +155,7 @@ export function popoverMenu({ title, message, actions }) {
 
     menu.focus({ preventScroll: true });
     // Opened from the keyboard: the first item is ready for the arrows.
-    if (!anchor || !last.x) enabledItems()[0]?.focus({ preventScroll: true });
+    if (byKeyboard) enabledItems()[0]?.focus({ preventScroll: true });
     if (motion.enabled()) window.gsap.fromTo(menu, { opacity: 0, scale: 0.96, y: below ? -4 : 4 }, { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: 'power2.out', clearProps: 'transform' });
   });
 }

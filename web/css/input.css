@@ -1110,3 +1110,4 @@ body.resizing #pane-sources, body.resizing #pane-list { transition: none !import
 .sheet { isolation: isolate; }
 .desk .sheet.covered { visibility: hidden; }
 .desk .backdrop.still { background: transparent; }
+.sheet:focus, .menu:focus { outline: none; }

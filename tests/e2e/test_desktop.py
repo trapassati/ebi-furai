@@ -65,6 +65,11 @@ def desktop_layout(browser):
     pg.click(".settings-nav-item:has-text('Informazioni')")
     pg.click(".settings-page button:has-text('Informazioni su')")
     pg.wait_for_timeout(600)
+    ring = "(() => { const f = document.querySelector(':focus-visible'); return f && f.tagName === 'BUTTON' ? f.textContent : ''; })()"
+    check(pg.evaluate(ring) == "" and pg.evaluate("document.activeElement.classList.contains('sheet')"),
+          "a window that opens has no outlined button: the focus is on the window")
+    pg.keyboard.press("Tab")
+    check(pg.evaluate("document.activeElement.textContent").strip().startswith("Indietro"), "Tab starts from its top")
     back = pg.locator(".sheet >> nth=-1 >> button:has-text('Indietro')")
     box = back.bounding_box()
     top = pg.evaluate(f"document.elementFromPoint({box['x'] + box['width'] / 2}, {box['y'] + box['height'] / 2}).closest('button')?.textContent || ''")

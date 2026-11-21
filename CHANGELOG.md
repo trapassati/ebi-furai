@@ -2,6 +2,12 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.3.2
+
+- Windows no longer open with their first button ("Done", "Back") outlined: the focus goes to the window itself,
+  which draws no ring (Tab still starts from its top). Closing a menu after a click leaves no outlined button
+  either; after the keyboard, the focus goes back where it was.
+
 ## 1.3.1
 
 - Desktop: a window opened from the settings (About, keyboard shortcuts, connected devices…) was drawn under

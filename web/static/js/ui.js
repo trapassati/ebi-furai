@@ -271,6 +271,8 @@ export function openSheet(content, opts = {}) {
     sheet.style.pointerEvents = 'none';
     backdrop.style.pointerEvents = 'none';
     if (covers) below.el.classList.remove('covered');
+    if (sheet.contains(document.activeElement) && below && below.el.isConnected) below.el.focus({ preventScroll: true });
+    else if (sheet.contains(document.activeElement)) document.activeElement.blur();
     motion.sheetOut(backdrop, sheet).then(() => { backdrop.remove(); sheet.remove(); resolveClosed(); });
     if (opts.onClose) opts.onClose();
   };
@@ -278,6 +280,13 @@ export function openSheet(content, opts = {}) {
   openSheets.push(entry);
   if (!opts.modal) backdrop.addEventListener('click', close);
   motion.sheetIn(backdrop, sheet);
+  // Focus goes to the window itself, which draws no ring: left alone, some
+  // browsers put it on the first button ("Done", "Back") and outline it
+  // until a click elsewhere. Tab still starts from the top of the window.
+  sheet.tabIndex = -1;
+  const blurOpener = document.activeElement;
+  if (blurOpener && blurOpener !== document.body && !sheet.contains(blurOpener) && blurOpener.blur) blurOpener.blur();
+  sheet.focus({ preventScroll: true });
   return { close, el: sheet, done };
 }
 
