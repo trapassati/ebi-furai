@@ -2,6 +2,14 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.4.0
+
+- **Desktop in the style of the latest macOS** (Liquid Glass), in Ebi Furai's colors: the sidebar floats as a
+  glass panel, toolbar buttons sit in glass capsules over the content, which scrolls softly under them;
+  rounder buttons, fields and selections; menus, tooltips and windows of glass, very round.
+- **The article list is made of cards again** on the desktop too, sized for a computer, with a highlight under
+  the mouse; the compact rows of 1.3 are gone.
+
 ## 1.3.2
 
 - Windows no longer open with their first button ("Done", "Back") outlined: the focus goes to the window itself,

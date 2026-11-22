@@ -15,7 +15,10 @@ def desktop_layout(browser):
     pg.wait_for_timeout(400)
     rows = pg.locator("#pane-list .arow")
     h = rows.nth(1).bounding_box()["height"]
-    check(h < 110, f"list rows are compact ({h:.0f} px)")
+    radius = float(pg.evaluate("parseFloat(getComputedStyle(document.querySelectorAll('#pane-list .arow')[1]).borderRadius)"))
+    check(radius >= 12 and h < 190, f"the list is made of cards, sized for a computer ({h:.0f} px, radius {radius:.0f})")
+    glass = pg.evaluate("getComputedStyle(document.getElementById('pane-sources'), '::before').backdropFilter")
+    check("blur" in glass, "the sidebar is a floating glass panel")
     side = pg.locator(".deck-card").first.bounding_box()["height"]
     check(side < 44, f"collections are rows in the sidebar ({side:.0f} px)")
 
