@@ -30,7 +30,9 @@ def feed_settings(browser):
     pg.wait_for_timeout(1200)
     check(sql("SELECT custom_title FROM feeds WHERE id = ?", fid)[0][0] == "Notizie", "the short name is saved when closing")
     check(pg.locator(f".feed-row[data-key='feed:{fid}']:has-text('Notizie')").count() == 1, "the home shows the short name")
-    check(queued in (0, 40), f"turning on the full text queues the unread articles ({queued})")
+    # The background download may already be working through them (any
+    # count up to all 40); that it finishes is checked just below.
+    check(0 <= queued <= 40, f"turning on the full text queues the unread articles ({queued})")
     # Background download: example.com is not reachable here, so every
     # article is tried once and keeps the feed's text.
     for _ in range(30):
