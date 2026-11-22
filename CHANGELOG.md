@@ -2,6 +2,12 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.4.1
+
+- **iPad: a narrower first column** (272 points instead of 320, in both orientations), as on the computer: the
+  collections and the feeds are single rows with their count, 44 points tall for the finger, without the
+  progress bar and the line under the name. The iPhone keeps its tiles.
+
 ## 1.4.0
 
 - **Desktop in the style of the latest macOS** (Liquid Glass), in Ebi Furai's colors: the sidebar floats as a

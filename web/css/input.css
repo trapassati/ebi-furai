@@ -1145,3 +1145,43 @@ body.resizing #pane-sources, body.resizing #pane-list { transition: none !import
 .desk .sheet.covered { visibility: hidden; }
 .desk .backdrop.still { background: transparent; }
 .sheet:focus, .menu:focus { outline: none; }
+
+/* ---- iPad (touch, two or three columns): a narrower sidebar ----
+   Collections and feeds as single rows, as on the computer, but each row
+   44 points tall for the finger. The iPhone keeps its tiles. */
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) {
+  --pad-side: calc(272px * var(--ui));
+  --pad-pick: color-mix(in srgb, var(--c-accent) 16%, transparent);
+}
+html:not(.desk) body[data-cols="3"] #pane-sources,
+html:not(.desk) body[data-cols="2"][data-view="sources"] #pane-sources { width: var(--pad-side); max-width: none; }
+html:not(.desk) body[data-cols="3"] #pane-sources > .pane-scroll { min-width: var(--pad-side); }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .home-head { padding: 0 calc(18px * var(--ui)); }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .home-title { font-size: 1.625rem; }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .search-pill { margin: calc(14px * var(--ui)) calc(12px * var(--ui)) 0; }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .search-pill input { height: calc(40px * var(--ui)); font-size: 0.9375rem; }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .section-title { font-size: 0.8125rem; font-weight: 600; color: var(--c-muted); padding: calc(20px * var(--ui)) calc(20px * var(--ui)) calc(6px * var(--ui)); }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .section-title small { font-size: 0.8125rem; }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .deck { display: flex; flex-direction: column; gap: calc(2px * var(--ui)); padding: 0 calc(10px * var(--ui)); }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .deck-card {
+  flex-direction: row; align-items: center; justify-content: flex-start; gap: calc(12px * var(--ui));
+  min-height: calc(44px * var(--ui)); padding: 0 calc(12px * var(--ui)) 0 calc(8px * var(--ui)); border-radius: calc(12px * var(--ui));
+  background: transparent; box-shadow: none;
+}
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .deck-top { display: contents; }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .deck-card .tile { width: calc(28px * var(--ui)); height: calc(28px * var(--ui)); }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .deck-card .tile svg { width: calc(16px * var(--ui)); height: calc(16px * var(--ui)); }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .deck-name { order: 1; flex: 1; font-size: 1rem; font-weight: 500; color: var(--c-fg); }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .deck-num { order: 2; font-size: 0.875rem; font-weight: 500; color: var(--c-muted); padding: 0; letter-spacing: 0; }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .deck-card:active { transform: none; background: var(--c-hover); }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .deck-card.selected { box-shadow: none; background: var(--pad-pick); }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .deck-card.selected .deck-name { font-weight: 600; }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .feed-rows { padding: 0 calc(10px * var(--ui)); }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .feed-row { min-height: calc(44px * var(--ui)); padding: calc(6px * var(--ui)) calc(10px * var(--ui)) calc(6px * var(--ui)) calc(8px * var(--ui)); border-radius: calc(12px * var(--ui)); gap: calc(12px * var(--ui)); }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .feed-row.nested { padding-left: calc(32px * var(--ui)); }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .feed-row > :is(.tile, .feed-badge) { width: calc(28px * var(--ui)); height: calc(28px * var(--ui)); }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .feed-row .name { font-size: 1rem; font-weight: 500; }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .feed-row :is(.progress, .meta) { display: none; }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .feed-row.selected { background: var(--pad-pick); }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .feed-row.selected .name { font-weight: 600; }
+html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .health-pill { width: calc(100% - calc(20px * var(--ui))); margin: calc(2px * var(--ui)) calc(10px * var(--ui)) calc(6px * var(--ui)); border-radius: 9999px; font-size: 0.875rem; }

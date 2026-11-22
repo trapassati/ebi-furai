@@ -103,6 +103,12 @@ def touch_keeps_its_interface(browser):
         pg = login(context(browser, device))
         check(not pg.evaluate("document.documentElement.classList.contains('desk')"), f"{device['viewport']['width']} px touch: no desktop mode")
         check(pg.locator("#pane-reader > .dock").count() == 1, "the article commands stay at the bottom")
+        side = pg.evaluate("document.getElementById('pane-sources').offsetWidth")
+        card = pg.evaluate("document.querySelector('.deck-card').offsetHeight")
+        if device is IPAD:
+            check(side <= 280 and card == 44, f"iPad: a narrow sidebar ({side} px) with rows the size of a finger ({card} px)")
+        else:
+            check(card > 60, f"iPhone: the collections stay tiles ({card} px)")
         check(not pg.errors, "no page errors")
 
 
