@@ -9,6 +9,7 @@ import { state, sourceTitle, findFeed, findFolder } from '../state.js';
 import { status as offlineStatus, syncNow as offlineSync } from '../offline/index.js';
 import { actionSheet, centerEmpty, clear, collapsingTitle, confirmDialog, debounce, emptyBlock, feedIcon, h, icon, keepPlace, readingMinutes, relTime, showError, toast } from '../ui.js';
 import * as motion from '../motion.js';
+import * as sounds from '../sounds.js';
 
 let ctx;
 let titleEl, subtitleEl, smallTitle, listEl, sentinel, emptyEl, scroller, filterBtns, searchBox, searchInput, searchBtn;
@@ -507,6 +508,7 @@ async function toggle(id, field) {
   const a = state.list.items.find((x) => x.id === id);
   if (!a) return;
   const value = !a[field];
+  if (value) sounds.play(field === 'starred' ? 'star' : 'read');
   ctx.articleChanged(a, { [field]: value });
   try {
     const r = await patch(`/api/articles/${id}`, { [field]: value });
@@ -533,6 +535,7 @@ async function markAllRead() {
     icon: 'o-check',
   });
   if (!ok) return;
+  sounds.play('allread');
   // Everything on screen changes at once; the server and the offline copy
   // follow in the background, and the list reloads when they are done.
   const source = state.source;

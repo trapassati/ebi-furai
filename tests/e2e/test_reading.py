@@ -109,5 +109,59 @@ def image_viewer(browser):
     check(True, "the close button closes it")
     check(not pg.errors, "no page errors")
 
+# Counts the sounds started (each tone or noise is one source).
+COUNT_SOUNDS = """(() => {
+  window.__snd = 0;
+  for (const C of [window.OscillatorNode, window.AudioBufferSourceNode]) {
+    const start = C.prototype.start;
+    C.prototype.start = function (...a) { window.__snd++; return start.apply(this, a); };
+  }
+})()"""
+
+
+def sound_effects(browser):
+    ctx = context(browser, DESKTOP)
+    ctx.add_init_script(COUNT_SOUNDS)
+    pg = login(ctx)
+    sounds = lambda: pg.evaluate("window.__snd")
+    open_collection(pg, 0)
+    pg.click("#pane-list .arow >> nth=0")
+    pg.wait_for_selector("#pane-reader .article-body")
+    pg.keyboard.press("s")
+    pg.wait_for_timeout(300)
+    check(sounds() == 0, "sounds are off by default")
+
+    pg.click("button[aria-label=Impostazioni]")
+    pg.wait_for_timeout(700)
+    pg.click(".switch-row:has-text('Effetti sonori') [role=switch]")
+    pg.wait_for_timeout(300)
+    check(sounds() == 3, "turning them on plays a preview")
+    check(pg.locator(".sound-volume button[data-v='60'].on").count() == 1, "medium volume by default")
+    pg.keyboard.press("Escape")
+    pg.wait_for_timeout(800)
+    pg.click("#pane-reader .article-body")
+
+    pg.evaluate("window.__snd = 0")
+    pg.keyboard.press("s")  # unstar: silent
+    pg.wait_for_timeout(300)
+    check(sounds() == 0, "removing a star is silent")
+    pg.keyboard.press("s")
+    pg.wait_for_timeout(300)
+    check(sounds() == 3, "starring plays the crystal")
+    pg.evaluate("window.__snd = 0")
+    pg.keyboard.press("m")  # the open article is read: back to unread, silent
+    pg.wait_for_timeout(300)
+    check(sounds() == 0, "marking as unread is silent")
+    pg.keyboard.press("m")
+    pg.wait_for_timeout(300)
+    check(sounds() == 1, "marking as read plays the drop")
+    pg.evaluate("window.__snd = 0")
+    pg.click("#pane-list button[aria-label='Segna tutto come letto']")
+    pg.click(".confirm button:has-text('Segna come letti')")
+    pg.wait_for_timeout(500)
+    check(sounds() == 1, "mark all as read plays the swoosh")
+    check(not pg.errors, "no page errors")
+
+
 if __name__ == "__main__":
-    run(mark_all_and_undo, counters_follow_server, empty_states_aligned, preferences_per_device, image_viewer)
+    run(mark_all_and_undo, counters_follow_server, empty_states_aligned, preferences_per_device, image_viewer, sound_effects)

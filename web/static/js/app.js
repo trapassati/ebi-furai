@@ -16,6 +16,7 @@ import { showLogin, hideLogin } from './views/login.js';
 import * as offline from './offline/index.js';
 import * as push from './push.js';
 import * as motion from './motion.js';
+import * as sounds from './sounds.js';
 import { maybeShowInstallHint } from './install.js';
 import { checkForUpdate, openFromNotification } from './views/update.js';
 
@@ -228,14 +229,18 @@ function refreshCountersIfOld(maxAge) {
 }
 
 async function refreshAll() {
+  const before = state.sources ? state.sources.unread : null;
   try {
     const r = await post('/api/refresh');
-    if (r.failed > 0) toast(t('{0} feeds not updated', r.failed), 'error');
+    // Feeds that keep failing would make the error sound at every refresh:
+    // the notice stays, silent.
+    if (r.failed > 0) toast(t('{0} feeds not updated', r.failed), 'error', { silent: true });
   } catch (e) {
     if (!offline.status.online) toast(t('You\'re offline: saved articles can still be read'));
     else showError(e);
   }
   await reloadSources();
+  if (before !== null && state.sources && state.sources.unread > before) sounds.play('refresh');
   offline.syncNow();
 }
 

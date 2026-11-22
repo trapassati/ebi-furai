@@ -17,6 +17,7 @@ import { openFilters } from './filters.js';
 import { openSessions, openTwoFactor, twoFactorLabel } from './security.js';
 import { showShortcuts } from '../shortcuts.js';
 import { isDesk } from '../desk.js';
+import * as sounds from '../sounds.js';
 
 // ---- appearance (also used by the "Aa" button in the reader) ----
 
@@ -86,6 +87,28 @@ function appearanceControls() {
   const language = labelled(t('Language'),
     segmented([['auto', t('Automatic|f')], ['it', 'Italiano'], ['en', 'English']], langPref(), (v) => { setLang(v); location.reload(); }));
 
+  // Sound effects, with their volume (shown only when they are on).
+  const soundSw = toggleSwitch(p.sounds === true);
+  const volNow = String(sounds.VOLUMES.reduce((a, [x]) => (Math.abs(x - p.sound_volume) < Math.abs(a - p.sound_volume) ? x : a), 60));
+  const soundVol = h('div', { class: 'sound-volume flex flex-col gap-1.5 pb-3' },
+    h('div', { class: 'text-[0.8125rem] text-muted', text: t('Volume') }),
+    segmented(sounds.VOLUMES.map(([v, l]) => [String(v), l]), volNow, (v) => {
+      setPref('sound_volume', Number(v));
+      sounds.play('star');
+    }));
+  soundVol.classList.toggle('hidden', p.sounds !== true);
+  soundSw.addEventListener('change', () => {
+    setPref('sounds', soundSw.checked);
+    soundVol.classList.toggle('hidden', !soundSw.checked);
+    if (soundSw.checked) sounds.play('refresh');
+  });
+  const soundBox = h('div', { class: 'group px-4' },
+    h('div', { class: 'switch-row' },
+      h('div', {}, h('div', { class: 'text-[1rem]', text: t('Sound effects') }),
+        h('div', { class: 'text-[0.8125rem] text-muted', text: t('Soft sounds for new articles, stars and articles marked as read. On the iPhone the silent switch mutes them.') })),
+      soundSw),
+    soundVol);
+
   return h('div', { class: 'flex flex-col gap-3' },
     h('div', { class: 'text-[0.8125rem] text-muted px-1', text: t('They only apply to this device.') }),
     language,
@@ -97,6 +120,7 @@ function appearanceControls() {
       h('button', { class: 'btn btn-plain !min-h-11 !px-5 text-[1.25rem]', 'aria-label': t('Larger text'), onclick: () => changeSize(1), text: 'A+' })),
     lineHeight,
     listSize,
+    soundBox,
     touch ? h('div', { class: 'group px-4' },
       h('div', { class: 'switch-row' },
         h('div', {}, h('div', { class: 'text-[1rem]', text: t('Side-by-side pages') }),

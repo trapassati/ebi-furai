@@ -8,6 +8,7 @@ import { getPrefs, onPrefsChange } from '../prefs.js';
 import { centerEmpty, clear, collapsingTitle, emptyBlock, feedIcon, keepPlace, fullDate, h, icon, iconButton, readingMinutes, showError, toast } from '../ui.js';
 import { openAppearance } from './settings.js';
 import * as motion from '../motion.js';
+import * as sounds from '../sounds.js';
 import { enableImageViewer } from './imageviewer.js';
 
 let ctx;
@@ -211,6 +212,7 @@ async function toggleRead() {
   const a = state.article;
   if (!a) return;
   const value = !a.read;
+  if (value) sounds.play('read');
   ctx.articleChanged(a, { read: value });
   motion.pop(btnRead.firstChild);
   try { await patch(`/api/articles/${a.id}`, { read: value }); } catch (e) { ctx.articleChanged(a, { read: !value }); showError(e); }
@@ -220,6 +222,7 @@ async function toggleStar() {
   const a = state.article;
   if (!a) return;
   const value = !a.starred;
+  if (value) sounds.play('star');
   ctx.articleChanged(a, { starred: value });
   motion.pop(btnStar.firstChild);
   try { await patch(`/api/articles/${a.id}`, { starred: value }); } catch (e) { ctx.articleChanged(a, { starred: !value }); showError(e); }

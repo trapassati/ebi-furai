@@ -1,6 +1,7 @@
 import { locale, t } from './i18n.js';
 import { isNetworkError } from './api.js';
 import * as motion from './motion.js';
+import * as sounds from './sounds.js';
 import { isDesk, popoverMenu } from './desk.js';
 
 // DOM helpers, icons, toasts, sheets and dialogs.
@@ -193,6 +194,7 @@ export function fullDate(ts) { return fullFmt.format(new Date(ts * 1000)); }
 // toast shows a short message; opts.action ({label, onClick}) adds a
 // button (for example "Annulla"), opts.duration how long it stays.
 export function toast(message, type = '', opts = {}) {
+  if (type === 'error' && !opts.silent) sounds.play('error');
   const box = document.getElementById('toasts');
   const el = h('div', { class: 'toast ' + type, role: 'status' }, h('span', { text: message }));
   let gone = false;

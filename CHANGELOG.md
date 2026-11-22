@@ -2,8 +2,13 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 1.5.0
 
+- **Sound effects**, off by default: Settings → Appearance → Sound effects, with a volume (low, medium, high).
+  A soft bell when a refresh brings new articles, a crystal when you star one, a drop when you mark one as read,
+  a swoosh for "mark all as read" and two low thumps when something fails. They are made in the app (no audio
+  files), they belong to the device, and they never play for articles marked as read while scrolling or when
+  opened. On the iPhone the silent switch mutes them and music from other apps keeps playing.
 - **Backup copies on a WebDAV server** (Nextcloud, ownCloud, a NAS, Koofr…): Settings → Backup → Copy to a WebDAV
   server. The address, username and password are checked before saving (the folder is created if missing); the
   password is stored sealed like the feed passwords and never shown again. Every backup is copied there, with

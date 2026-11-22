@@ -38,7 +38,7 @@ The interface is in **English and Italian**, chosen from the device's language.
 - **Reading**: unread, today, starred and all articles; folders; full text of truncated articles with one tap
   (or always, per feed); reading time; pictures full screen with zoom; search across everything you have.
 - **Made for touch**: swipe to star or mark as read, pull to refresh, mark as read while scrolling,
-  "mark the ones above / below as read", undo for every bulk action.
+  "mark the ones above / below as read", undo for every bulk action; soft sound effects if you like them.
 - **Works offline**: the latest unread articles and the starred ones are kept on the device; what you do
   offline is sent when the connection comes back.
 - **Notifications and badge**: a summary of what's unread at the times you choose, with the count on the
