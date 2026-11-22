@@ -134,6 +134,15 @@ def update_notice(browser):
     check(pg.locator(".update-card").count() == 0, "\"Later\" hides it on this device")
     check(not pg.errors, "no page errors")
 
+    # The notification of a new version opens the app on the update window.
+    pg.evaluate("localStorage.removeItem('updateSnoozed')")
+    pg.evaluate("history.replaceState(null, '', '/#/update')")
+    pg.reload()
+    pg.wait_for_selector(".release-notes li")
+    check(pg.locator(".command-box").count() == 1 and pg.evaluate("location.hash") != "#/update",
+          "the link of the notification opens the update window")
+    check(not pg.errors, "no page errors")
+
     # Without an administrator's session the status is not given.
     check(status("/api/admin/update") == 401, "the update status needs an administrator's session")
 

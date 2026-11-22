@@ -44,6 +44,7 @@ type Manager struct {
 	keepWeekly int
 	loc        *time.Location
 	mu         sync.Mutex // one backup at a time
+	remote     remoteState
 }
 
 func NewManager(db *sql.DB, dir string, keepDaily, keepWeekly int, loc *time.Location) *Manager {
@@ -73,6 +74,8 @@ func (m *Manager) Run(ctx context.Context) {
 			} else {
 				slog.Info("backup created", "name", info.Name, "size", info.Size)
 			}
+		} else if m.syncDue() {
+			m.syncSoon() // copies elsewhere: retry after a failure, or settings changed
 		}
 		timer.Reset(time.Hour)
 	}
@@ -133,6 +136,7 @@ func (m *Manager) create(ctx context.Context, prune bool) (Info, error) {
 	if prune {
 		m.prune()
 	}
+	m.syncSoon()
 	return Info{Name: name, Size: st.Size(), Time: now}, nil
 }
 

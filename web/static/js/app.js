@@ -17,7 +17,11 @@ import * as offline from './offline/index.js';
 import * as push from './push.js';
 import * as motion from './motion.js';
 import { maybeShowInstallHint } from './install.js';
-import { checkForUpdate } from './views/update.js';
+import { checkForUpdate, openFromNotification } from './views/update.js';
+
+// Opened from the notification of a new version (read before the routes
+// rewrite the address).
+let openedForUpdate = location.hash === '#/update';
 
 const body = document.body;
 const panes = {};
@@ -412,7 +416,12 @@ async function start(me) {
   offline.syncNow();
   push.refresh();
   maybeShowInstallHint();
-  checkForUpdate({ force: true });
+  if (openedForUpdate) {
+    openedForUpdate = false;
+    openFromNotification();
+  } else {
+    checkForUpdate({ force: true });
+  }
 }
 
 // Reacts to the offline layer: status badges, and fresh data on reconnect.
@@ -538,6 +547,7 @@ function registerServiceWorker() {
   // A tapped notification asks the open app to show a list.
   navigator.serviceWorker.addEventListener('message', (e) => {
     if (!e.data || e.data.type !== 'navigate' || !state.me) return;
+    if (new URL(e.data.url).hash === '#/update') { openFromNotification(); return; }
     const parts = new URL(e.data.url).hash.replace(/^#\/?/, '').split('/');
     const source = parts[1] && ctx.sourceExists(parts[1]) ? parts[1] : 'unread';
     const same = source === state.source;

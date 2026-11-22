@@ -153,3 +153,18 @@ export function openUpdate(u) {
     h('button', { class: 'icon-btn on w-20 font-semibold text-[1.0625rem]', onclick: () => ref.sheet.close(), text: t('Done') }));
   ref.sheet = openSheet(h('div', { class: 'min-h-full' }, header, body), { full: true, wide: true });
 }
+
+// openFromNotification: the update notification opens the app at
+// "#/update". The release may have been installed meanwhile.
+export async function openFromNotification() {
+  if (!state.me || !state.me.user.is_admin) return;
+  let r;
+  try { r = await get('/api/admin/update'); } catch (e) { return; }
+  if (r.available && r.update) {
+    state.update = r.update;
+    if (card) hideCard(card);
+    openUpdate(r.update);
+  } else {
+    toast(t('Ebi Furai is up to date'));
+  }
+}

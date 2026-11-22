@@ -144,6 +144,15 @@ func run() error {
 	}
 	if cfg.UpdateCheck {
 		uc := update.New(version, cfg.UpdateCheckURL)
+		if pushSvc != nil {
+			uc.OnAvailable = func(found update.Status) {
+				nctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+				defer cancel()
+				if _, err := pushSvc.NotifyUpdate(nctx, found.Latest); err != nil {
+					slog.Warn("update notification failed", "err", err)
+				}
+			}
+		}
 		apiSrv.SetUpdates(uc)
 		go uc.Run(ctx)
 	}

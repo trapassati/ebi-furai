@@ -45,6 +45,10 @@ type Checker struct {
 
 	mu     sync.Mutex
 	status Status
+
+	// OnAvailable is called after a check that finds a newer release (set
+	// before Run): the server notifies the administrators.
+	OnAvailable func(Status)
 }
 
 // New returns a checker for this version ("1.2.0", or "dev" for a build
@@ -127,6 +131,10 @@ func (c *Checker) Check(ctx context.Context) error {
 	c.status.URL = rel.HTMLURL
 	c.status.PublishedAt = rel.PublishedAt
 	c.status.CheckedAt = time.Now()
+	st := c.status
+	if st.Available && c.OnAvailable != nil {
+		go c.OnAvailable(st)
+	}
 	return nil
 }
 

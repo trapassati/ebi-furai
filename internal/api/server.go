@@ -183,6 +183,11 @@ func (s *Server) Routes() http.Handler {
 				r.Get("/backups/{name}", s.handleDownloadBackup)
 				r.Post("/backups/{name}/restore", s.handleRestoreBackup)
 				r.Post("/backups/restore", s.handleRestoreBackup)
+				r.Delete("/backups/{name}", s.handleDeleteBackup)
+				r.Put("/backups/webdav", s.handleSaveWebDAV)
+				r.Delete("/backups/webdav", s.handleDeleteWebDAV)
+				r.Post("/backups/webdav/test", s.handleTestWebDAV)
+				r.Post("/backups/webdav/sync", s.handleSyncWebDAV)
 			})
 		})
 		r.NotFound(func(w http.ResponseWriter, _ *http.Request) {

@@ -82,6 +82,37 @@ def backups(browser):
     check(pg.evaluate("fetch('/api/admin/backups/..%2Freader.db').then(r=>r.status)") == 404, "no path tricks")
 
 
+def delete_backup_and_webdav(browser):
+    pg = login(context(browser))
+    pg.click("button[aria-label=Impostazioni]")
+    pg.wait_for_timeout(700)
+    pg.click("text=Crea un backup ora")
+    pg.wait_for_timeout(900)
+    st = pg.evaluate("fetch('/api/admin/backups').then(r=>r.json())")
+    before, name = len(st["items"]), st["items"][0]["name"]
+    pg.locator("button[aria-label^='Elimina il backup del']").first.click()
+    pg.click(".confirm-actions button:has-text('Elimina')")
+    pg.wait_for_timeout(900)
+    st = pg.evaluate("fetch('/api/admin/backups').then(r=>r.json())")
+    check(len(st["items"]) == before - 1 and name not in [b["name"] for b in st["items"]], "a backup can be deleted from the list")
+    check(not os.path.exists(os.path.join(st["dir"], name)), "and its file is gone from the server")
+    check(pg.evaluate("fetch('/api/admin/backups/..%2Freader.db', {method: 'DELETE', headers: {'X-CSRF-Token': 'x'}}).then(r=>r.status)") in (403, 404),
+          "no path tricks when deleting")
+
+    # WebDAV: a server that cannot be reached is refused before saving.
+    pg.click("text=Copia su un server WebDAV…")
+    pg.fill(".sheet form input[name=url]", "http://127.0.0.1:1/Backup")
+    pg.fill(".sheet form input[name=user]", "ebi")
+    pg.fill(".sheet form input[name=password]", "secret")
+    pg.fill(".sheet form input[name=current]", ADMIN[1])
+    pg.click(".sheet form button[type=submit]")
+    pg.wait_for_selector(".sheet form .text-danger:has-text('impossibile raggiungere il server')")
+    check(sql("SELECT COUNT(*) FROM settings WHERE key LIKE 'webdav%'")[0][0] == 0, "an unreachable WebDAV folder is not saved")
+    pg.click(".sheet form button:has-text('Annulla')")
+    pg.wait_for_timeout(500)
+    check(not pg.errors, "no page errors")
+
+
 def restore(browser):
     pg = login(context(browser))
     pg.click("button[aria-label=Impostazioni]")
@@ -125,4 +156,4 @@ def restore(browser):
 
 
 if __name__ == "__main__":
-    run(two_step_verification, backups, restore)
+    run(two_step_verification, backups, delete_backup_and_webdav, restore)

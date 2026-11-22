@@ -2,6 +2,19 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+- **Backup copies on a WebDAV server** (Nextcloud, ownCloud, a NAS, Koofr…): Settings → Backup → Copy to a WebDAV
+  server. The address, username and password are checked before saving (the folder is created if missing); the
+  password is stored sealed like the feed passwords and never shown again. Every backup is copied there, with
+  the same rotation as on the server; a failed copy is retried every hour and shown in the settings, and
+  "Copy now" copies at once. Files in that folder that are not Ebi Furai backups are never touched.
+- **Delete a backup** from the list (trash button). Its copy on WebDAV, if any, stays until the rotation removes
+  it there.
+- **Notification of a new version** to the administrators, on the devices where they turned notifications on:
+  once per version, without touching the unread badge. Tapping it opens the release notes and the update
+  command.
+
 ## 1.4.1
 
 - **iPad: a narrower first column** (272 points instead of 320, in both orientations), as on the computer: the

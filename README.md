@@ -55,7 +55,8 @@ The interface is in **English and Italian**, chosen from the device's language.
   connected devices you can sign out.
 - **Safe by default**: argon2id passwords, CSRF tokens, rate-limited sign-in, sanitized HTML, a strict
   Content-Security-Policy, SSRF protection for every outgoing request, images proxied through the server.
-- **Automatic backups** of the database, daily, downloadable and restorable from the app.
+- **Automatic backups** of the database, daily, downloadable and restorable from the app, with copies on a WebDAV
+  server (Nextcloud, a NAS…) if you like.
 
 ## Install
 
@@ -180,6 +181,11 @@ The server saves a compressed copy of the database every day, keeping the last 7
 see them in **Settings → Backup**, where they can make one now and download it. A backup contains every account
 and the feed passwords: keep it somewhere safe, and copy it away from the server now and then.
 
+To keep **copies elsewhere**, in Settings → Backup choose "Copy to a WebDAV server" and give the address of a
+folder (Nextcloud: `https://YOUR-CLOUD/remote.php/dav/files/USER/Backups/ebi-furai/`), a username and a password
+(an app password, where the server has them). Every backup is copied there and the same days and weeks are kept.
+The copies hold every account: use a server you trust. Backups can also be deleted from the list, one by one.
+
 To **restore**, in Settings → Backup tap the restore button next to a backup, or "Restore from a file…" for one
 you downloaded (also from another Ebi Furai installation), and confirm with your password. The file is checked
 first; then the current database is saved as a new backup (to go back if needed), the server restarts with the
@@ -204,8 +210,9 @@ With the service: `sudo systemctl stop ebi-furai`, `gunzip -c BACKUP.db.gz | sud
 - Service: run the install command again.
 
 Installed apps pick up the new version the next time they are opened. When a new release is out, administrators
-see it when they open the app, with what changed and the command for their installation (`UPDATE_CHECK=false`
-turns this off: then the server never contacts GitHub).
+see it when they open the app, with what changed and the command for their installation, and get a notification
+on the devices where notifications are on (`UPDATE_CHECK=false` turns this off: then the server never contacts
+GitHub).
 
 ## Locked out?
 

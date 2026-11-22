@@ -136,24 +136,32 @@ func (s *Service) SendDigest(ctx context.Context, userID int64, force bool) (Sen
 	}
 	res := SendResult{Unread: p.Badge}
 	body, _ := json.Marshal(p)
+	sent, failed, err := s.send(ctx, userID, body, "digest", 6*time.Hour)
+	res.Sent, res.Failed = sent, failed
+	return res, err
+}
+
+// send delivers a payload to every device of a user, dropping the
+// subscriptions that are gone or keep failing.
+func (s *Service) send(ctx context.Context, userID int64, body []byte, topic string, ttl time.Duration) (sent, failed int, err error) {
 	subs, err := s.store.PushSubscriptions(userID)
 	if err != nil {
-		return res, err
+		return 0, 0, err
 	}
-	msg := Message{Payload: body, TTL: 6 * time.Hour, Topic: "digest", Urgency: "normal"}
+	msg := Message{Payload: body, TTL: ttl, Topic: topic, Urgency: "normal"}
 	for _, sub := range subs {
 		err := s.vapid.Send(ctx, s.client, Subscription{Endpoint: sub.Endpoint, P256dh: sub.P256dh, Auth: sub.Auth}, s.subject(), msg)
 		var se *SendError
 		switch {
 		case err == nil:
-			res.Sent++
+			sent++
 			s.store.PushResult(sub.ID, "")
 		case errors.As(err, &se) && se.Gone():
-			res.Failed++
+			failed++
 			s.store.DeletePushByID(sub.ID)
 			slog.Info("push subscription gone, removed", "user", userID, "device", sub.Device)
 		default:
-			res.Failed++
+			failed++
 			s.store.PushResult(sub.ID, friendlyError(err))
 			if sub.FailCount+1 >= maxFailures {
 				s.store.DeletePushByID(sub.ID)
@@ -161,7 +169,48 @@ func (s *Service) SendDigest(ctx context.Context, userID int64, force bool) (Sen
 			slog.Warn("push failed", "user", userID, "device", sub.Device, "err", err)
 		}
 	}
-	return res, nil
+	return sent, failed, nil
+}
+
+const settingUpdateNotified = "update_notified"
+
+// NotifyUpdate tells the administrators, on the devices where they turned
+// notifications on, that a new version is out: once per version, also
+// across restarts. It leaves the badge of the app icon alone. It returns
+// how many devices got it.
+func (s *Service) NotifyUpdate(ctx context.Context, version string) (int, error) {
+	if done, _ := s.store.Setting(settingUpdateNotified); done == version {
+		return 0, nil
+	}
+	// Marked first: a failing device must not get it again and again.
+	if err := s.store.SetSetting(settingUpdateNotified, version); err != nil {
+		return 0, err
+	}
+	users, err := s.store.ListUsers()
+	if err != nil {
+		return 0, err
+	}
+	total := 0
+	for _, u := range users {
+		if !u.IsAdmin || u.Disabled {
+			continue
+		}
+		lang := s.store.UserLang(u.ID)
+		body, _ := json.Marshal(map[string]string{
+			"title": s.cfg.AppName,
+			"body":  i18n.T(lang, fmt.Sprintf("Ebi Furai %s is available: tap to see what's new and how to update.", version)),
+			"url":   "/#/update",
+			"tag":   "update",
+		})
+		n, _, err := s.send(ctx, u.ID, body, "update", 72*time.Hour)
+		if err != nil {
+			slog.Warn("update notification", "user", u.ID, "err", err)
+			continue
+		}
+		total += n
+	}
+	slog.Info("new version notified", "version", version, "devices", total)
+	return total, nil
 }
 
 // Run checks the digest schedules every minute until ctx is cancelled.

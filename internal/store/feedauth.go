@@ -4,6 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"encoding/hex"
 	"errors"
 )
 
@@ -85,4 +86,58 @@ func (s *Store) SetFeedAuth(userID, feedID int64, user, pass string) error {
 		return ErrNotFound
 	}
 	return nil
+}
+
+// Other secrets of the server (the WebDAV password of the backups) are
+// sealed with the same key, bound to their setting name.
+
+// SetSecretSetting stores a secret sealed; an empty value removes it.
+func (s *Store) SetSecretSetting(key, value string) error {
+	if value == "" {
+		_, err := s.DB.Exec(`DELETE FROM settings WHERE key = ?`, key)
+		return err
+	}
+	aead, err := s.feedAEAD()
+	if err != nil {
+		return err
+	}
+	nonce := make([]byte, aead.NonceSize())
+	if _, err := rand.Read(nonce); err != nil {
+		return err
+	}
+	sealed := aead.Seal(nonce, nonce, []byte(value), []byte("setting:"+key))
+	return s.SetSetting(key, hex.EncodeToString(sealed))
+}
+
+// SecretSetting opens a sealed setting ("" when there is none).
+func (s *Store) SecretSetting(key string) (string, error) {
+	v, err := s.Setting(key)
+	if errors.Is(err, ErrNotFound) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	sealed, err := hex.DecodeString(v)
+	if err != nil {
+		return "", errors.New("damaged secret")
+	}
+	aead, err := s.feedAEAD()
+	if err != nil {
+		return "", err
+	}
+	if len(sealed) < aead.NonceSize() {
+		return "", errors.New("damaged secret")
+	}
+	plain, err := aead.Open(nil, sealed[:aead.NonceSize()], sealed[aead.NonceSize():], []byte("setting:"+key))
+	if err != nil {
+		return "", errors.New("unreadable secret")
+	}
+	return string(plain), nil
+}
+
+// DeleteSetting removes a setting.
+func (s *Store) DeleteSetting(key string) error {
+	_, err := s.DB.Exec(`DELETE FROM settings WHERE key = ?`, key)
+	return err
 }

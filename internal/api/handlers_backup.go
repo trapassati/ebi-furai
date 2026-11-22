@@ -14,7 +14,10 @@ import (
 )
 
 // SetBackups enables the backup pages (admin only).
-func (s *Server) SetBackups(m *backup.Manager) { s.backups = m }
+func (s *Server) SetBackups(m *backup.Manager) {
+	s.backups = m
+	m.SetRemote(s.webdavRemote)
+}
 
 type backupList struct {
 	Enabled bool          `json:"enabled"`
@@ -22,9 +25,10 @@ type backupList struct {
 	Daily   int           `json:"keep_daily"`
 	Weekly  int           `json:"keep_weekly"`
 	Items   []backup.Info `json:"items"`
+	WebDAV  webdavInfo    `json:"webdav"`
 }
 
-func (s *Server) handleListBackups(w http.ResponseWriter, _ *http.Request) {
+func (s *Server) handleListBackups(w http.ResponseWriter, r *http.Request) {
 	out := backupList{Items: []backup.Info{}, Daily: s.cfg.BackupDaily, Weekly: s.cfg.BackupWeekly}
 	if s.backups == nil {
 		writeJSON(w, http.StatusOK, out)
@@ -36,6 +40,7 @@ func (s *Server) handleListBackups(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	out.Enabled, out.Dir, out.Items = true, s.backups.Dir(), list
+	out.WebDAV = s.webdavInfo(r.Context())
 	writeJSON(w, http.StatusOK, out)
 }
 
