@@ -2,6 +2,13 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+- **Fixed: the Aa window in the reader** no longer fits only half on an iPhone: it holds what changes the article
+  (theme, font, size, line spacing), with Done at the top. Language, list text, sounds and the rest are in
+  Settings → Appearance.
+- **Fixed: on the iPad in landscape** the button to hide the first column works again (broken in 1.4.1).
+
 ## 1.5.0
 
 - **Sound effects**, off by default: Settings → Appearance → Sound effects, with a volume (low, medium, high).

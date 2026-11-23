@@ -63,5 +63,34 @@ def touch_devices_unscaled(browser):
     check(ui == 1, "touch devices stay at 100%")
 
 
+def ipad_hide_first_column(browser):
+    # The button in the reader hides the first column, landscape and portrait.
+    pg = login(context(browser, IPAD))
+    width = lambda sel: pg.evaluate(f"document.querySelector('{sel}').getBoundingClientRect().width")
+    open_collection(pg, 0)
+    pg.click("#pane-list .arow >> nth=0")
+    pg.wait_for_selector("#pane-reader .article-body")
+    pg.wait_for_timeout(600)
+    check(pg.evaluate("document.body.dataset.cols") == "3", "three columns in landscape")
+    shown = width("#pane-sources")
+    pg.click("#pane-reader .sidebar-btn")
+    pg.wait_for_timeout(700)
+    check(width("#pane-sources") == 0, f"landscape: the sources column hides ({shown} -> {width('#pane-sources')})")
+    pg.click("#pane-reader .sidebar-btn")
+    pg.wait_for_timeout(700)
+    check(width("#pane-sources") == shown, "and comes back")
+    pg.set_viewport_size({"width": 820, "height": 1180})
+    pg.wait_for_timeout(800)
+    check(pg.evaluate("document.body.dataset.cols") == "2", "two columns in portrait")
+    shown = width("#pane-list")
+    pg.click("#pane-reader .sidebar-btn")
+    pg.wait_for_timeout(700)
+    check(width("#pane-list") == 0, f"portrait: the list hides ({shown} -> {width('#pane-list')})")
+    pg.click("#pane-reader .sidebar-btn")
+    pg.wait_for_timeout(700)
+    check(width("#pane-list") == shown, "and comes back")
+    check(not pg.errors, "no page errors")
+
+
 if __name__ == "__main__":
-    run(duo_rotations_keep_place, desktop_scale_and_keys, touch_devices_unscaled)
+    run(duo_rotations_keep_place, desktop_scale_and_keys, touch_devices_unscaled, ipad_hide_first_column)

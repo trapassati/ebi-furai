@@ -1156,6 +1156,7 @@ html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) {
 html:not(.desk) body[data-cols="3"] #pane-sources,
 html:not(.desk) body[data-cols="2"][data-view="sources"] #pane-sources { width: var(--pad-side); max-width: none; }
 html:not(.desk) body[data-cols="3"] #pane-sources > .pane-scroll { min-width: var(--pad-side); }
+html:not(.desk) body[data-cols="3"][data-sidebar="hidden"] #pane-sources { width: 0; }
 html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .home-head { padding: 0 calc(18px * var(--ui)); }
 html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .home-title { font-size: 1.625rem; }
 html:not(.desk) body:is([data-cols="2"], [data-cols="3"]) .search-pill { margin: calc(14px * var(--ui)) calc(12px * var(--ui)) 0; }
