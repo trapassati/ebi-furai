@@ -163,5 +163,28 @@ def sound_effects(browser):
     check(not pg.errors, "no page errors")
 
 
+def reading_appearance(browser):
+    # The "Aa" window holds only what changes the article and always fits,
+    # with Done in reach, even on a small iPhone.
+    pg = login(context(browser, {"viewport": {"width": 375, "height": 667}, "has_touch": True, "is_mobile": True}))
+    open_collection(pg, 0)
+    pg.click(".arow >> nth=0")
+    pg.wait_for_selector(".article-body")
+    pg.wait_for_timeout(600)
+    pg.click("button[aria-label=Aspetto]")
+    pg.wait_for_selector(".reading-appearance")
+    pg.wait_for_timeout(600)
+    text = pg.inner_text(".reading-appearance")
+    check("Effetti sonori" not in text and "Lingua" not in text and "Testo della lista" not in text,
+          "no sounds, language or list size in the Aa window")
+    check("Interlinea" in text, "the line spacing is there")
+    box = pg.evaluate("(() => { const r = document.querySelector('.sheet').getBoundingClientRect(); return [r.top, r.bottom]; })()")
+    check(box[0] > 40 and box[1] <= 667 + 1, f"the window fits with room above it ({box})")
+    pg.click(".reading-appearance button:has-text('Fine')")
+    pg.wait_for_timeout(700)
+    check(pg.locator(".reading-appearance").count() == 0, "Done closes it")
+    check(not pg.errors, "no page errors")
+
+
 if __name__ == "__main__":
-    run(mark_all_and_undo, counters_follow_server, empty_states_aligned, preferences_per_device, image_viewer, sound_effects)
+    run(mark_all_and_undo, counters_follow_server, empty_states_aligned, preferences_per_device, image_viewer, sound_effects, reading_appearance)

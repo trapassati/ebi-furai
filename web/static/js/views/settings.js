@@ -32,7 +32,9 @@ export function segmented(options, current, onPick) {
   return seg;
 }
 
-function appearanceControls() {
+// reading: the short version for the "Aa" button in the reader, only what
+// changes the article being read.
+function appearanceControls({ reading = false } = {}) {
   const p = getPrefs();
   const sizeLabel = h('span', { class: 'w-16 text-center tabular-nums text-[0.9375rem] font-medium', text: p.size + ' pt' });
   const changeSize = (d) => {
@@ -109,15 +111,20 @@ function appearanceControls() {
       soundSw),
     soundVol);
 
+  const theme = segmented([['auto', t('Automatic')], ['light', t('Light')], ['dark', t('Dark')]], p.theme, (v) => setPref('theme', v));
+  const size = h('div', { class: 'size-box bg-raise rounded-[calc(20px*var(--ui))] shadow-[var(--shadow-card)] flex items-center justify-between px-2 py-2' },
+      h('button', { class: 'btn btn-plain !min-h-11 !px-5 text-[0.9375rem]', 'aria-label': t('Smaller text'), onclick: () => changeSize(-1), text: 'A−' }),
+      sizeLabel,
+      h('button', { class: 'btn btn-plain !min-h-11 !px-5 text-[1.25rem]', 'aria-label': t('Larger text'), onclick: () => changeSize(1), text: 'A+' }));
+
+  if (reading) return h('div', { class: 'flex flex-col gap-3' }, theme, fonts, size, lineHeight);
+
   return h('div', { class: 'flex flex-col gap-3' },
     h('div', { class: 'text-[0.8125rem] text-muted px-1', text: t('They only apply to this device.') }),
     language,
-    segmented([['auto', t('Automatic')], ['light', t('Light')], ['dark', t('Dark')]], p.theme, (v) => setPref('theme', v)),
+    theme,
     fonts,
-    h('div', { class: 'size-box bg-raise rounded-[calc(20px*var(--ui))] shadow-[var(--shadow-card)] flex items-center justify-between px-2 py-2' },
-      h('button', { class: 'btn btn-plain !min-h-11 !px-5 text-[0.9375rem]', 'aria-label': t('Smaller text'), onclick: () => changeSize(-1), text: 'A−' }),
-      sizeLabel,
-      h('button', { class: 'btn btn-plain !min-h-11 !px-5 text-[1.25rem]', 'aria-label': t('Larger text'), onclick: () => changeSize(1), text: 'A+' })),
+    size,
     lineHeight,
     listSize,
     soundBox,
@@ -129,11 +136,17 @@ function appearanceControls() {
     uiSize);
 }
 
+// The "Aa" window of the reader: only what changes the article, with a
+// Done button always in reach. The rest is in Settings → Appearance.
 export function openAppearance() {
-  const body = h('div', { class: 'px-4 pt-1 pb-3 flex flex-col gap-3' },
-    h('div', { class: 'sheet-title pb-1', text: t('Appearance') }),
-    appearanceControls());
-  openSheet(body);
+  const ref = {};
+  const body = h('div', { class: 'px-4 pt-1 pb-3 flex flex-col gap-3 reading-appearance' },
+    h('div', { class: 'flex items-center' },
+      h('div', { class: 'w-20' }),
+      h('div', { class: 'flex-1 sheet-title', text: t('Appearance') }),
+      h('button', { class: 'icon-btn on w-20 font-semibold text-[1.0625rem] justify-end', type: 'button', onclick: () => ref.sheet.close(), text: t('Done') })),
+    appearanceControls({ reading: true }));
+  ref.sheet = openSheet(body);
 }
 
 // ---- settings sheet ----
