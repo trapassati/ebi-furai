@@ -112,5 +112,22 @@ def touch_keeps_its_interface(browser):
         check(not pg.errors, "no page errors")
 
 
+def scrollbars_while_scrolling(browser):
+    # With a mouse the scrollbars show only while a column scrolls.
+    pg = login(context(browser, DESKTOP))
+    open_collection(pg, 3)
+    pg.wait_for_selector("#pane-list .arow")
+    thumb = "getComputedStyle(document.querySelector('#pane-list .pane-scroll')).getPropertyValue('--sb-thumb').trim()"
+    check(pg.evaluate(thumb) in ("rgba(0, 0, 0, 0)", "transparent", "#0000"), f"hidden at rest ({pg.evaluate(thumb)})")
+    pg.hover("#pane-list .arow >> nth=0")
+    pg.mouse.wheel(0, 300)
+    pg.wait_for_timeout(200)
+    check(pg.locator("#pane-list .pane-scroll.sb-on").count() == 1, "shown while scrolling")
+    pg.wait_for_timeout(2500)  # the smooth scrolling goes on for about a second
+    left = pg.evaluate("[...document.querySelectorAll('.sb-on')].map(e => e.id || e.className)")
+    check(not left, f"hidden again shortly after ({left})")
+    check(not pg.errors, "no page errors")
+
+
 if __name__ == "__main__":
-    run(desktop_layout, empty_states_line_up, touch_keeps_its_interface)
+    run(desktop_layout, empty_states_line_up, touch_keeps_its_interface, scrollbars_while_scrolling)

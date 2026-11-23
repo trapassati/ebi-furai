@@ -17,6 +17,7 @@ import * as offline from './offline/index.js';
 import * as push from './push.js';
 import * as motion from './motion.js';
 import * as sounds from './sounds.js';
+import './scrollbars.js';
 import { maybeShowInstallHint } from './install.js';
 import { checkForUpdate, openFromNotification } from './views/update.js';
 

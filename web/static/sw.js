@@ -21,6 +21,7 @@ const SHELL = [
   '/static/js/state.js',
   '/static/js/prefs.js',
   '/static/js/sounds.js',
+  '/static/js/scrollbars.js',
   '/static/js/gestures.js',
   '/static/js/views/sources.js',
   '/static/js/views/list.js',
