@@ -73,6 +73,17 @@ func (s *Store) AppPasswordLogin(username, secretHash string) (userID, passwordI
 	return
 }
 
+// AppPasswordUser finds the enabled user an app password belongs to, from
+// the password alone (the secret is random and long: it names its user).
+func (s *Store) AppPasswordUser(secretHash string) (userID, passwordID int64, err error) {
+	err = s.DB.QueryRow(`SELECT u.id, p.id FROM app_passwords p JOIN users u ON u.id = p.user_id
+		WHERE p.secret_hash = ? AND u.disabled = 0`, secretHash).Scan(&userID, &passwordID)
+	if errors.Is(err, sql.ErrNoRows) {
+		err = ErrNotFound
+	}
+	return
+}
+
 // CreateAPIToken stores the token given to an app at sign-in. An app
 // signing in again and again does not pile up tokens: only the newest 10
 // of each app password are kept.

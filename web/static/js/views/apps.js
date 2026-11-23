@@ -22,7 +22,7 @@ function copy(text) {
 }
 
 // A value to type in the app, with a copy button.
-function valueRow(label, value, mono = false) {
+export function valueRow(label, value, mono = false) {
   return h('div', { class: 'flex items-center gap-3 px-4 py-2.5' },
     h('div', { class: 'flex-1 min-w-0' },
       h('div', { class: 'text-[0.8125rem] text-muted', text: label }),
@@ -36,20 +36,42 @@ export function serverAddress() {
 }
 
 // The new password, shown once.
-function showSecret(name, secret) {
+function showSecret(name, secret, extra = null) {
   const ref = {};
   const body = h('div', { class: 'px-4 pt-2 pb-6 flex flex-col gap-4' },
     h('div', { class: 'text-center' },
       icon('o-key', 'w-12 h-12 mx-auto text-ok'),
       h('p', { class: 'text-[1.125rem] font-semibold mt-2', text: t('App password for {0}', name) })),
-    h('p', { class: 'text-[0.9375rem] text-muted', text: t('Type it in the app instead of your password. You won\'t see it again: if you lose it, make a new one.') }),
+    h('p', { class: 'text-[0.9375rem] text-muted', text: extra ? extra.message : t('Type it in the app instead of your password. You won\'t see it again: if you lose it, make a new one.') }),
     h('button', { class: 'secret-key app-secret', type: 'button', title: t('Copy'), onclick: () => copy(secret) }, secret),
-    h('div', { class: 'group' },
+    extra ? extra.rows(secret) : h('div', { class: 'group' },
       valueRow(t('Server'), serverAddress()),
       valueRow(t('Username'), state.me.user.username)),
     h('button', { class: 'btn btn-primary w-full', text: t('Done'), onclick: () => ref.sheet.close() }));
   ref.sheet = openSheet(body, { wide: true, modal: true });
   return ref.sheet.done;
+}
+
+// createAppPassword asks a name and the password, then shows the new
+// secret once. Returns true when one was made.
+export async function createAppPassword({ name = '', placeholder = t('For example: Reeder on the iPhone'), extra = null } = {}) {
+  let made = null;
+  const ok = await formDialog({
+    title: t('New app password'),
+    message: t('A name to recognize it, then your password to confirm.'),
+    okLabel: t('Create'),
+    fields: [
+      { name: 'name', value: name, placeholder, autocapitalize: 'sentences' },
+      { name: 'password', type: 'password', placeholder: 'Password', autocomplete: 'current-password' },
+    ],
+    validate: async (v) => {
+      try { made = await post('/api/me/app-passwords', { name: v.name, password: v.password }); } catch (e) { return e.message; }
+      return null;
+    },
+  });
+  if (!ok || !made) return false;
+  await showSecret(made.item.name, made.secret, extra);
+  return true;
 }
 
 export function openApps() {
@@ -89,23 +111,7 @@ export function openApps() {
   };
 
   const create = async () => {
-    let made = null;
-    const ok = await formDialog({
-      title: t('New app password'),
-      message: t('A name to recognize it, then your password to confirm.'),
-      okLabel: t('Create'),
-      fields: [
-        { name: 'name', placeholder: t('For example: Reeder on the iPhone'), autocapitalize: 'sentences' },
-        { name: 'password', type: 'password', placeholder: 'Password', autocomplete: 'current-password' },
-      ],
-      validate: async (v) => {
-        try { made = await post('/api/me/app-passwords', { name: v.name, password: v.password }); } catch (e) { return e.message; }
-        return null;
-      },
-    });
-    if (!ok || !made) return;
-    load();
-    await showSecret(made.item.name, made.secret);
+    if (await createAppPassword()) load();
   };
 
   const steps = (app, where) => h('div', { class: 'px-4 py-3' },

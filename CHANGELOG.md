@@ -4,6 +4,17 @@ All notable changes are listed here. Versions follow [Semantic Versioning](https
 
 ## Unreleased
 
+- **Listen to the article**: the speaker button in the reader (or `L`) reads it aloud with the voice of the device,
+  in the language of the article. A small player floats over it: back and forward by a paragraph, play and pause,
+  the speed (0.8× to 1.5×, kept on the device). The paragraph being read is highlighted and kept in view; at the
+  end the player closes. On the iPhone the voice stops when the screen locks, as in Safari.
+- **Read later**: save any page to read it in Ebi Furai, in its own **Read later** collection (shown once
+  something is saved), with the text extracted, offline too. From the app (+ → Save a page for later), from the
+  browser with a bookmarklet, or from the iPhone's share button with a Shortcut that uses an app password (Settings
+  → Save for later explains both). Saved pages stay out of Unread, Today, All and the badge; unread ones are never
+  cleaned up; a page saved again comes back to the top. They show the site they come from, and can be removed from
+  the list's menu.
+- **Desktop: scrollbars only while scrolling**, fading out after a moment as on macOS.
 - **Fixed: the Aa window in the reader** no longer fits only half on an iPhone: it holds what changes the article
   (theme, font, size, line spacing), with Done at the top. Language, list text, sounds and the rest are in
   Settings → Appearance.

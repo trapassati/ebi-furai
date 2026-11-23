@@ -79,16 +79,16 @@ func (s *Store) unsealFetch(f *FetchFeed) {
 // DueFeeds returns feeds whose next fetch time has passed.
 func (s *Store) DueFeeds(limit int) ([]*FetchFeed, error) {
 	return s.queryFetch(`SELECT `+fetchCols+` FROM feeds
-		WHERE next_fetch_at <= ? AND EXISTS (SELECT 1 FROM users u WHERE u.id = feeds.user_id AND u.disabled = 0)
+		WHERE next_fetch_at <= ? AND kind = 'feed' AND EXISTS (SELECT 1 FROM users u WHERE u.id = feeds.user_id AND u.disabled = 0)
 		ORDER BY next_fetch_at LIMIT ?`, now(), limit)
 }
 
 func (s *Store) UserFetchFeeds(userID int64) ([]*FetchFeed, error) {
-	return s.queryFetch(`SELECT `+fetchCols+` FROM feeds WHERE user_id = ?`, userID)
+	return s.queryFetch(`SELECT `+fetchCols+` FROM feeds WHERE user_id = ? AND kind = 'feed'`, userID)
 }
 
 func (s *Store) FetchFeedByID(userID, id int64) (*FetchFeed, error) {
-	f, err := scanFetch(s.DB.QueryRow(`SELECT `+fetchCols+` FROM feeds WHERE id = ? AND user_id = ?`, id, userID))
+	f, err := scanFetch(s.DB.QueryRow(`SELECT `+fetchCols+` FROM feeds WHERE id = ? AND user_id = ? AND kind = 'feed'`, id, userID))
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -249,7 +249,7 @@ func findDuplicate(tx *sql.Tx, userID, feedID, since int64, urlKey, tk, tk2 stri
 	}
 	var id int64
 	err := tx.QueryRow(`SELECT COALESCE(dup_of, id) FROM articles
-		WHERE user_id = ? AND feed_id <> ? AND fetched_at >= ? AND hidden_by IS NULL AND (`+strings.Join(conds, " OR ")+`)
+		WHERE user_id = ? AND feed_id <> ? AND fetched_at >= ? AND hidden_by IS NULL AND saved = 0 AND (`+strings.Join(conds, " OR ")+`)
 		ORDER BY id LIMIT 1`, append([]any{userID, feedID, since}, args...)...).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, nil
@@ -258,9 +258,10 @@ func findDuplicate(tx *sql.Tx, userID, feedID, since int64, urlKey, tk, tk2 stri
 }
 
 // Cleanup deletes articles older than cutoff (by publish and fetch time)
-// except starred ones. Returns the number of deleted rows.
+// except starred ones and the pages saved for later still to read.
+// Returns the number of deleted rows.
 func (s *Store) Cleanup(cutoff int64) (int64, error) {
-	res, err := s.DB.Exec(`DELETE FROM articles WHERE starred = 0 AND published_at < ? AND fetched_at < ?`, cutoff, cutoff)
+	res, err := s.DB.Exec(`DELETE FROM articles WHERE starred = 0 AND (saved = 0 OR read = 1) AND published_at < ? AND fetched_at < ?`, cutoff, cutoff)
 	if err != nil {
 		return 0, err
 	}

@@ -141,7 +141,7 @@ func (s *Store) FilterCandidates(userID, feedID, folderID int64, withBody bool) 
 	}
 	q := `SELECT a.id, a.feed_id, COALESCE(f.folder_id, 0), a.title, ` + body + `
 		FROM articles a JOIN feeds f ON f.id = a.feed_id
-		WHERE a.user_id = ? AND a.read = 0 AND a.starred = 0 AND a.hidden_by IS NULL`
+		WHERE a.user_id = ? AND a.read = 0 AND a.starred = 0 AND a.hidden_by IS NULL AND a.saved = 0`
 	args := []any{userID}
 	switch {
 	case feedID > 0:

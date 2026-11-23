@@ -102,6 +102,7 @@ func (s *Server) Routes() http.Handler {
 		r.Post("/setup", s.handleSetup)
 		r.Post("/login", s.handleLogin)
 		r.Post("/login/totp", s.handleLoginTOTP)
+		r.Post("/save", s.handleSaveWithKey) // Shortcuts and other apps, with an app password
 
 		r.Group(func(r chi.Router) {
 			r.Use(s.requireAuth)
@@ -149,6 +150,8 @@ func (s *Server) Routes() http.Handler {
 			r.Get("/articles/{id}", s.handleGetArticle)
 			r.Patch("/articles/{id}", s.handleUpdateArticle)
 			r.Post("/articles/{id}/fulltext", s.handleFullText)
+			r.Post("/saved", s.handleSavePage)
+			r.Delete("/saved/{id}", s.handleDeleteSaved)
 
 			r.Get("/push", s.handlePushInfo)
 			r.Put("/push/settings", s.handlePushSettings)
@@ -364,8 +367,10 @@ func localize(w http.ResponseWriter, v any) any {
 			x["error"] = i18n.T(lw.lang, e)
 		}
 	case map[string]any:
-		if e, ok := x["error"].(string); ok {
-			x["error"] = i18n.T(lw.lang, e)
+		for _, k := range []string{"error", "problem"} {
+			if e, ok := x[k].(string); ok {
+				x[k] = i18n.T(lw.lang, e)
+			}
 		}
 		if f, ok := x["feed"].(*store.FeedInfo); ok {
 			x["feed"] = feed(f)

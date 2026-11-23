@@ -4,6 +4,9 @@ package i18n
 // the code. %s and %d are placeholders: what they stand for is kept (and
 // translated too, when it is itself a known message).
 var it = map[string]string{
+	"that is not a web address": "questo non è un indirizzo web",
+	"an app password is needed, as \"Authorization: Bearer <app password>\"": "serve una password per le app, come \"Authorization: Bearer <password per le app>\"",
+	"wrong app password": "password per le app sbagliata",
 	"Ebi Furai %s is available: tap to see what's new and how to update.":       "È disponibile Ebi Furai %s: tocca per vedere le novità e come aggiornare.",
 	"the server refused the username or password":                               "il server ha rifiutato nome utente o password",
 	"the server did not answer in time":                                         "il server non ha risposto in tempo",

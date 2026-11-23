@@ -11,6 +11,7 @@ import * as motion from '../motion.js';
 import { canInstall, showInstallHint } from '../install.js';
 import { openAbout } from './about.js';
 import { openApps } from './apps.js';
+import { openSaveHelp } from './saved.js';
 import { openUpdate } from './update.js';
 import { failingCount, openFeedHealth } from './health.js';
 import { openFilters } from './filters.js';
@@ -195,6 +196,7 @@ export function openSettings(ctx) {
       twoFactorRow(),
       rowButton('o-device-phone-mobile', 'indigo', t('Connected devices'), openSessions),
       rowButton('o-squares-2x2', 'sunset', t('Reeder and other apps'), openApps),
+      rowButton('o-bookmark', 'rose', t('Save for later'), openSaveHelp),
       canInstall() ? rowButton('o-plus', 'indigo', t('Add to Home Screen'), () => { sheet.close(); setTimeout(showInstallHint, 350); }) : null,
       rowButton('o-arrow-right-start-on-rectangle', 'rose', t('Sign out'), logout, 'text-danger'))),
     section(t('Notifications'), 'o-bell', 'rose', notifyControls()),

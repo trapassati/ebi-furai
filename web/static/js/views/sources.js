@@ -10,6 +10,7 @@ import {
 import { openSettings } from './settings.js';
 import { openFeedHealth } from './health.js';
 import { openFeedSettings } from './feedsettings.js';
+import { saveDialog } from './saved.js';
 import { status as offlineStatus } from '../offline/index.js';
 import * as motion from '../motion.js';
 
@@ -105,9 +106,9 @@ function searchPill() {
   return form;
 }
 
-function deckCard(src, iconName, tone, name, count, label) {
+function deckCard(src, iconName, tone, name, count, label, cls = '') {
   return h('button', {
-    class: 'deck-card' + (isSelected(src) ? ' selected' : ''),
+    class: 'deck-card' + (cls ? ' ' + cls : '') + (isSelected(src) ? ' selected' : ''),
     dataset: { sel: src },
     'aria-label': count === null ? name : `${name}, ${label}`,
     onclick: () => ctx.selectSource(src),
@@ -206,7 +207,9 @@ export function renderSources() {
     deckCard('unread', 'o-inbox', 'sky', t('Unread'), s.unread, plural(s.unread, t('article to read'), t('articles to read'))),
     deckCard('today', 'o-calendar-days', 'aurora', t('Today'), s.today, plural(s.today, t('new to read|one'), t('new to read'))),
     deckCard('starred', 's-star', 'sunset', t('Starred'), s.starred, plural(s.starred, t('saved|one'), t('saved'))),
-    deckCard('all', 'o-squares-2x2', 'mint', t('All'), null, ''));
+    deckCard('all', 'o-squares-2x2', 'mint', t('All'), null, ''),
+    // Read later: once something has been saved.
+    s.saved_total ? deckCard('saved', 'o-bookmark', 'rose', t('Read later'), s.saved, plural(s.saved, t('page to read'), t('pages to read')), 'wide') : null);
   content.append(
     header(s),
     searchPill(),
@@ -274,6 +277,7 @@ function addMenu() {
     actions: [
       { label: t('Add feed'), icon: 'o-rss', tone: 'aurora', onSelect: addFeedDialog },
       { label: t('New folder'), icon: 'o-folder-plus', tone: 'sky', onSelect: newFolder },
+      { label: t('Save a page for later'), icon: 'o-bookmark', tone: 'rose', onSelect: saveDialog },
     ],
   });
 }

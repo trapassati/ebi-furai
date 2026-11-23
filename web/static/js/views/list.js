@@ -10,6 +10,7 @@ import { status as offlineStatus, syncNow as offlineSync } from '../offline/inde
 import { actionSheet, centerEmpty, clear, collapsingTitle, confirmDialog, debounce, emptyBlock, feedIcon, h, icon, keepPlace, readingMinutes, relTime, showError, toast } from '../ui.js';
 import * as motion from '../motion.js';
 import * as sounds from '../sounds.js';
+import { openSaveHelp, removeSaved } from './saved.js';
 
 let ctx;
 let titleEl, subtitleEl, smallTitle, listEl, sentinel, emptyEl, scroller, filterBtns, searchBox, searchInput, searchBtn;
@@ -167,12 +168,21 @@ function toggleSearch() {
   }
 }
 
+// Where an article comes from: its feed, or the site of a page saved for later.
+export function sourceLabel(a) {
+  if (a.saved && a.url) {
+    try { return new URL(a.url).hostname.replace(/^www\./, ''); } catch (e) { /* the feed name */ }
+  }
+  return a.feed_title;
+}
+
 function sourceUnread() {
   const s = state.sources;
   if (!s) return 0;
   const [kind, raw] = state.source.split(':');
   if (kind === 'today') return s.today;
   if (kind === 'unread' || kind === 'all') return s.unread;
+  if (kind === 'saved') return s.saved || 0;
   if (kind === 'feed') { const r = findFeed(Number(raw)); return r ? r.feed.unread : 0; }
   if (kind === 'folder') { const f = findFolder(Number(raw)); return f ? f.unread : 0; }
   return 0;
@@ -323,6 +333,7 @@ function showEmpty() {
   let art = 'o-inbox';
   if (l.offline) { title = t('Nothing saved here'); hint = t('You\'re offline: only the articles downloaded for offline reading are available.'); art = 'o-arrow-down-tray'; }
   else if (l.query) { title = t('No results'); hint = t('Try different words.'); art = 'o-magnifying-glass'; }
+  else if (state.source === 'saved' && effectiveFilter() !== 'unread') { title = t('Nothing saved'); hint = t('Save pages to read later from the browser or the share button.'); art = 'o-bookmark'; }
   else if (state.source === 'starred') { title = t('No starred articles'); hint = t('Swipe an article to the right to add it here.'); art = 's-star'; }
   else if (effectiveFilter() === 'starred') { title = t('No starred articles here'); hint = t('Swipe an article to the right to star it.'); art = 's-star'; }
   else if (effectiveFilter() === 'unread') { title = t('You\'ve read everything'); hint = isDesk() ? t('Click the list at the top to see the articles you already read.') : t('Tap the list at the bottom to see the articles you already read.'); art = 's-sparkles'; }
@@ -330,6 +341,9 @@ function showEmpty() {
     ? h('img', { class: 'empty-koi', src: `/static/icons/koi.png?v=${encodeURIComponent(state.me.version || '')}`, alt: '' })
     : null;
   emptyEl.append(...emptyBlock(koi || h('div', { class: 'empty-art' }, icon(art)), title, hint));
+  if (state.source === 'saved' && !l.query && !l.offline) {
+    emptyEl.append(h('button', { class: 'btn btn-plain mt-4', onclick: openSaveHelp }, icon('o-bookmark', 'w-5 h-5'), t('How to save pages')));
+  }
   swim(koi);
   centerEmpty(scroller, emptyEl);
 }
@@ -355,7 +369,7 @@ function openRow(id) {
 
 function rowLabel(a) {
   const mins = readingMinutes(a.words);
-  return (a.read ? '' : t('Unread. ')) + `${a.title}. ${a.feed_title}, ${relTime(a.published_at)}` + (mins ? t('. {0} minutes read', mins) : '') + (opensOnSite(a) ? t('. Opens on the site') : '');
+  return (a.read ? '' : t('Unread. ')) + `${a.title}. ${sourceLabel(a)}, ${relTime(a.published_at)}` + (mins ? t('. {0} minutes read', mins) : '') + (opensOnSite(a) ? t('. Opens on the site') : '');
 }
 
 function rowEl(a) {
@@ -366,9 +380,9 @@ function rowEl(a) {
   const main = h('div', { class: 'arow-main px-4 pt-3.5 pb-4' },
     h('div', { class: 'a-head flex items-center gap-2 mb-2' },
       h('span', { class: 'unread-dot' }),
-      feedIcon(a.feed_id, a.feed_has_icon, a.feed_title, 'small'),
+      feedIcon(a.feed_id, a.feed_has_icon && !a.saved, sourceLabel(a), 'small'),
       h('div', { class: 'crumbs flex-1' },
-        h('span', { class: 'truncate font-medium', text: a.feed_title }),
+        h('span', { class: 'truncate font-medium', text: sourceLabel(a) }),
         icon('o-chevron-right'),
         h('span', { class: 'flex-none', text: relTime(a.published_at) })),
       readingMinutes(a.words) ? h('span', { class: 'reading-time a-time', title: t('Reading time') }, icon('o-clock'), `${readingMinutes(a.words)} min`) : null,
@@ -410,8 +424,23 @@ function rowMenu(id) {
         onSelect: () => markRange(id, 'below') },
       a.url ? { label: t('Open on the site'), icon: 'o-arrow-top-right-on-square', tone: 'indigo',
         onSelect: () => window.open(a.url, '_blank', 'noopener') } : null,
+      a.saved ? { label: t('Remove from Read later'), icon: 'o-trash', destructive: true,
+        onSelect: () => removeSavedRow(id) } : null,
     ].filter(Boolean),
   });
+}
+
+// A page saved for later, removed for good.
+async function removeSavedRow(id) {
+  if (!(await removeSaved(id))) return;
+  const row = listEl.querySelector(`.arow[data-id="${id}"]`);
+  if (row) await motion.collapse([row]);
+  if (row) row.remove();
+  const i = state.list.items.findIndex((x) => x.id === id);
+  if (i >= 0) state.list.items.splice(i, 1);
+  if (state.articleId === id) ctx.closeArticle();
+  showEmpty();
+  ctx.reloadSources();
 }
 
 // "Segna come letti quelli sopra / sotto": the rows on screen change at

@@ -10,6 +10,7 @@ import { openAppearance } from './settings.js';
 import * as motion from '../motion.js';
 import * as sounds from '../sounds.js';
 import { enableImageViewer } from './imageviewer.js';
+import { sourceLabel } from './list.js';
 import { startListening, stopListening, supported as canListen } from './listen.js';
 
 let ctx;
@@ -124,7 +125,7 @@ export async function showArticle(id) {
 function renderHeaderOnly(item) {
   clear(wrap);
   motion.scrollTop(scroller, 0);
-  feedTitleEl.textContent = item.feed_title;
+  feedTitleEl.textContent = sourceLabel(item);
   wrap.append(h('h1', { class: 'reader-title mt-2', text: item.title }),
     h('div', { class: 'pt-10 flex justify-center text-muted' }, icon('o-arrow-path', 'w-6 h-6 spin')));
 }
@@ -136,7 +137,7 @@ function render() {
   clear(wrap);
   toolbar.classList.remove('hidden');
   motion.scrollTop(scroller, 0);
-  feedTitleEl.textContent = a.feed_title;
+  feedTitleEl.textContent = sourceLabel(a);
 
   const mins = readingMinutes(a.words);
   const meta = h('div', { class: 'text-[0.875rem] text-muted mt-3 mb-7' },
@@ -148,7 +149,7 @@ function render() {
   if (a.url) title.append(h('a', { href: a.url, target: '_blank', rel: 'noopener noreferrer', text: a.title }));
   else title.textContent = a.title;
   wrap.append(
-    h('div', { class: 'reader-source mb-4' }, feedIcon(a.feed_id, a.feed_has_icon, a.feed_title, 'big'), h('span', { class: 'truncate', text: a.feed_title })),
+    h('div', { class: 'reader-source mb-4' }, feedIcon(a.feed_id, a.feed_has_icon && !a.saved, sourceLabel(a), 'big'), h('span', { class: 'truncate', text: sourceLabel(a) })),
     title,
     meta);
 

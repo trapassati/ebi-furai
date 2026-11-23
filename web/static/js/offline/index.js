@@ -142,7 +142,9 @@ async function adjustCounts(rec, readDelta, starDelta) {
 }
 
 function adjustSnapshot(src, rec, readDelta, starDelta) {
-  if (readDelta) {
+  if (readDelta && rec.saved) {
+    src.saved = Math.max(0, (src.saved || 0) + readDelta);
+  } else if (readDelta) {
     src.unread = Math.max(0, src.unread + readDelta);
     if (rec.published_at >= todayStart()) src.today = Math.max(0, src.today + readDelta);
     const all = src.feeds.concat(...src.folders.map((f) => f.feeds));
@@ -172,10 +174,11 @@ function matches(rec, source, fmap) {
   const [kind, raw] = source.split(':');
   const id = Number(raw);
   switch (kind) {
-    case 'today': return rec.published_at >= todayStart();
-    case 'unread': return !rec.read;
+    case 'today': return !rec.saved && rec.published_at >= todayStart();
+    case 'unread': return !rec.saved && !rec.read;
     case 'starred': return rec.starred;
-    case 'all': return true;
+    case 'all': return !rec.saved;
+    case 'saved': return !!rec.saved;
     case 'feed': return rec.feed_id === id;
     case 'folder': return fmap.get(rec.feed_id) === id;
   }

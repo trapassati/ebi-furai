@@ -36,7 +36,10 @@ The interface is in **English and Italian**, chosen from the device's language.
 ## Features
 
 - **Reading**: unread, today, starred and all articles; folders; full text of truncated articles with one tap
-  (or always, per feed); reading time; pictures full screen with zoom; search across everything you have.
+  (or always, per feed); reading time; pictures full screen with zoom; search across everything you have;
+  articles read aloud by the device's voice.
+- **Read later**: save any page from the browser (a bookmarklet) or from the iPhone's share button (a Shortcut);
+  its text is kept in its own collection, offline too.
 - **Made for touch**: swipe to star or mark as read, pull to refresh, mark as read while scrolling,
   "mark the ones above / below as read", undo for every bulk action; soft sound effects if you like them.
 - **Works offline**: the latest unread articles and the starred ones are kept on the device; what you do
@@ -148,6 +151,22 @@ starred articles in sync with the web app: Reeder, NetNewsWire, ReadKit, FeedMe,
 Apps see the same articles as the web app (not the ones hidden by filters; duplicates only once) and load the
 pictures straight from the sites, not through the image proxy.
 
+## Read later
+
+Pages saved for later end up in the **Read later** collection, with their text extracted and ready to read,
+offline too; once read they leave it like any article. Settings → **Save for later** has the bookmarklet for the
+browser and the steps for the iPhone. The Shortcut does a single request, which any other tool can do too:
+
+```
+POST https://YOUR-ADDRESS/api/save
+Authorization: Bearer <app password>
+Content-Type: application/json
+
+{"url": "https://example.com/an-article"}
+```
+
+The address can also be sent as a form field `url` or as plain text. A page that cannot be read is kept as a link.
+
 
 Every setting is optional. With Docker they go in `.env`; with the service in
 `/etc/ebi-furai/ebi-furai.env` (then `sudo systemctl restart ebi-furai`).
@@ -226,7 +245,7 @@ sudo -u ebi-furai env DATA_DIR=/var/lib/ebi-furai /usr/local/bin/ebi-furai reset
 
 ## Keyboard shortcuts
 
-`J`/`K` next/previous · `M` read/unread · `S` star · `F` full text · `V` open the original · `Shift`+`A` mark all
+`J`/`K` next/previous · `M` read/unread · `S` star · `F` full text · `V` open the original · `L` listen · `Shift`+`A` mark all
 as read · `/` search · `R` refresh · `1`–`4` collections · `B` show/hide the column · `Esc` back · `?` all shortcuts
 
 ## Building from source

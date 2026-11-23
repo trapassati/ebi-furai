@@ -44,6 +44,8 @@ type Sources struct {
 	TodayTotal int           `json:"today_total"`
 	Unread     int           `json:"unread"`
 	Starred    int           `json:"starred"`
+	Saved      int           `json:"saved"`       // pages in "Read later" still to read
+	SavedTotal int           `json:"saved_total"` // all the pages in "Read later"
 	Folders    []*FolderInfo `json:"folders"`
 	Feeds      []*FeedInfo   `json:"feeds"`
 }
@@ -52,11 +54,14 @@ type Sources struct {
 func (s *Store) Sources(userID, todayStart int64) (*Sources, error) {
 	out := &Sources{Folders: []*FolderInfo{}, Feeds: []*FeedInfo{}}
 	err := s.DB.QueryRow(`SELECT
-		(SELECT COUNT(*) FROM articles WHERE user_id = ? AND read = 0 AND published_at >= ?),
-		(SELECT COUNT(*) FROM articles WHERE user_id = ? AND published_at >= ? AND hidden_by IS NULL AND dup_of IS NULL),
-		(SELECT COUNT(*) FROM articles WHERE user_id = ? AND read = 0),
-		(SELECT COUNT(*) FROM articles WHERE user_id = ? AND starred = 1)`,
-		userID, todayStart, userID, todayStart, userID, userID).Scan(&out.Today, &out.TodayTotal, &out.Unread, &out.Starred)
+		(SELECT COUNT(*) FROM articles WHERE user_id = ? AND read = 0 AND published_at >= ? AND saved = 0),
+		(SELECT COUNT(*) FROM articles WHERE user_id = ? AND published_at >= ? AND hidden_by IS NULL AND dup_of IS NULL AND saved = 0),
+		(SELECT COUNT(*) FROM articles WHERE user_id = ? AND read = 0 AND saved = 0),
+		(SELECT COUNT(*) FROM articles WHERE user_id = ? AND starred = 1),
+		(SELECT COUNT(*) FROM articles WHERE user_id = ? AND saved = 1 AND read = 0),
+		(SELECT COUNT(*) FROM articles WHERE user_id = ? AND saved = 1)`,
+		userID, todayStart, userID, todayStart, userID, userID, userID, userID).Scan(&out.Today, &out.TodayTotal, &out.Unread, &out.Starred,
+		&out.Saved, &out.SavedTotal)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +100,7 @@ func (s *Store) Sources(userID, todayStart int64) (*Sources, error) {
 
 	rows, err = s.DB.Query(`SELECT id, folder_id, title, custom_title, url, site_url, icon IS NOT NULL,
 		error_count, last_error, last_fetched_at, last_ok_at, auth_user, full_text, open_web
-		FROM feeds WHERE user_id = ?`, userID)
+		FROM feeds WHERE user_id = ? AND kind = 'feed'`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +343,7 @@ type ExportFeed struct {
 func (s *Store) ExportFeeds(userID int64) ([]ExportFeed, error) {
 	rows, err := s.DB.Query(`SELECT f.custom_title, f.title, f.url, f.site_url, COALESCE(d.name, '')
 		FROM feeds f LEFT JOIN folders d ON d.id = f.folder_id
-		WHERE f.user_id = ? ORDER BY COALESCE(d.position, 0), d.name, f.title COLLATE NOCASE`, userID)
+		WHERE f.user_id = ? AND f.kind = 'feed' ORDER BY COALESCE(d.position, 0), d.name, f.title COLLATE NOCASE`, userID)
 	if err != nil {
 		return nil, err
 	}

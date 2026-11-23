@@ -62,7 +62,7 @@ func (s *Store) GetArticles(userID int64, ids []int64) ([]*Article, error) {
 	for rows.Next() {
 		a := &Article{}
 		if err := rows.Scan(&a.ID, &a.FeedID, &a.FeedTitle, &a.FeedHasIcon, &a.Title, &a.URL, &a.Preview, &a.Thumbnail,
-			&a.PublishedAt, &a.Read, &a.Starred, &a.Words, &a.Author, &a.Content, &a.FullContent, &a.SiteURL); err != nil {
+			&a.PublishedAt, &a.Read, &a.Starred, &a.Words, &a.Saved, &a.Author, &a.Content, &a.FullContent, &a.SiteURL); err != nil {
 			return nil, err
 		}
 		a.HasFull = a.FullContent != ""

@@ -20,10 +20,13 @@ import * as sounds from './sounds.js';
 import './scrollbars.js';
 import { maybeShowInstallHint } from './install.js';
 import { checkForUpdate, openFromNotification } from './views/update.js';
+import { initSaved, saveFromBookmarklet } from './views/saved.js';
 
 // Opened from the notification of a new version (read before the routes
 // rewrite the address).
 let openedForUpdate = location.hash === '#/update';
+// Opened by the "Save for later" bookmarklet: #/save?url=…
+let pageToSave = location.hash.startsWith('#/save?') ? new URLSearchParams(location.hash.slice(7)).get('url') : null;
 
 const body = document.body;
 const panes = {};
@@ -248,7 +251,11 @@ async function refreshAll() {
 // Keeps counters in sync when an article changes read state locally.
 function readChanged(item, read) {
   const s = state.sources;
-  if (s) {
+  if (s && item.saved) {
+    // A page saved for later counts only in its own collection.
+    s.saved = Math.max(0, s.saved + (read ? -1 : 1));
+    renderSoon();
+  } else if (s) {
     const delta = read ? -1 : 1;
     s.unread = Math.max(0, s.unread + delta);
     push.setBadge(s.unread);
@@ -277,6 +284,7 @@ function markedAllRead(source) {
   if (kind === 'feed') hit = feeds.filter((f) => f.id === id);
   else if (kind === 'folder') hit = (s.folders.find((f) => f.id === id) || { feeds: [] }).feeds;
   else if (kind === 'unread' || kind === 'all') hit = feeds;
+  else if (kind === 'saved') { s.saved = 0; renderSources(); renderListHeader(); return; }
   if (!hit) return;
   let n = 0;
   hit.forEach((f) => { n += f.unread; f.unread = 0; });
@@ -341,7 +349,7 @@ const ctx = {
     const [kind, raw] = src.split(':');
     if (kind === 'feed') return !!findFeed(Number(raw));
     if (kind === 'folder') return !!findFolder(Number(raw));
-    return ['today', 'unread', 'starred', 'all'].includes(src);
+    return ['today', 'unread', 'starred', 'all', 'saved'].includes(src);
   },
   async afterSourcesChanged() {
     await reloadSources();
@@ -360,8 +368,23 @@ const ctx = {
     });
     if (missing) reloadSources({ quiet: true });
   },
+  // Read later, loaded again (a page was just saved).
+  showSaved() {
+    if (state.source === 'saved') state.source = null;
+    selectSource('saved');
+  },
   get state() { return state; },
 };
+initSaved(ctx);
+
+// The bookmarklet in a tab where Ebi Furai is already open: only the
+// address changes.
+window.addEventListener('hashchange', () => {
+  if (!location.hash.startsWith('#/save?') || !state.me) return;
+  const url = new URLSearchParams(location.hash.slice(7)).get('url');
+  writeHash();
+  if (url) saveFromBookmarklet(url);
+});
 
 // ---- start ----
 
@@ -427,6 +450,11 @@ async function start(me) {
     openFromNotification();
   } else {
     checkForUpdate({ force: true });
+  }
+  if (pageToSave) {
+    const url = pageToSave;
+    pageToSave = null;
+    saveFromBookmarklet(url);
   }
 }
 

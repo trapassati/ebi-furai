@@ -25,6 +25,7 @@ type ArticleSummary struct {
 	Read        bool   `json:"read"`
 	Starred     bool   `json:"starred"`
 	Words       int    `json:"words,omitempty"` // for the reading time
+	Saved       bool   `json:"saved,omitempty"` // in "Read later"
 }
 
 type Article struct {
@@ -39,16 +40,16 @@ type Article struct {
 // Selection identifies a set of articles: a smart feed, a folder or a feed.
 type Selection struct {
 	UserID     int64
-	Kind       string // today, unread, starred, all, feed, folder
+	Kind       string // today, unread, starred, all, saved, feed, folder
 	ID         int64  // feed or folder id
 	TodayStart int64
 	Search     string
 }
 
-// ParseSource parses "today", "unread", "starred", "all", "feed:N", "folder:N".
+// ParseSource parses "today", "unread", "starred", "all", "saved", "feed:N", "folder:N".
 func ParseSource(src string) (kind string, id int64, err error) {
 	switch src {
-	case "today", "unread", "starred", "all":
+	case "today", "unread", "starred", "all", "saved":
 		return src, 0, nil
 	}
 	k, v, ok := strings.Cut(src, ":")
@@ -76,9 +77,17 @@ func (sel Selection) where() (string, []any) {
 		conds = append(conds, "a.feed_id = ?")
 		args = append(args, sel.ID)
 	}
+	// Pages saved for later have their own collection; the starred ones
+	// are among the starred too.
+	switch sel.Kind {
+	case "saved":
+		conds = append(conds, "a.saved = 1")
+	case "today", "unread", "all", "folder":
+		conds = append(conds, "a.saved = 0")
+	}
 	// A duplicate shows only in its own feed (or among the starred, if
 	// starred there): everywhere else the first copy stands for both.
-	if sel.Kind != "feed" {
+	if sel.Kind != "feed" && sel.Kind != "saved" {
 		conds = append(conds, "(a.dup_of IS NULL OR a.starred = 1)")
 	}
 	switch sel.Kind {
@@ -118,11 +127,11 @@ type ListOptions struct {
 }
 
 const summaryCols = `a.id, a.feed_id, COALESCE(NULLIF(f.custom_title, ''), NULLIF(f.title, ''), f.url), f.icon IS NOT NULL,
-	a.title, a.url, a.preview, a.thumbnail, a.published_at, a.read, a.starred, COALESCE(a.words, 0)`
+	a.title, a.url, a.preview, a.thumbnail, a.published_at, a.read, a.starred, COALESCE(a.words, 0), a.saved`
 
 func scanSummary(sc interface{ Scan(...any) error }, a *ArticleSummary) error {
 	return sc.Scan(&a.ID, &a.FeedID, &a.FeedTitle, &a.FeedHasIcon, &a.Title, &a.URL, &a.Preview, &a.Thumbnail,
-		&a.PublishedAt, &a.Read, &a.Starred, &a.Words)
+		&a.PublishedAt, &a.Read, &a.Starred, &a.Words, &a.Saved)
 }
 
 // ListArticles returns a page of articles and the cursor for the next one.
@@ -276,7 +285,7 @@ func (s *Store) GetArticle(userID, id int64) (*Article, error) {
 	row := s.DB.QueryRow(`SELECT `+summaryCols+`, a.author, a.content, a.full_content, f.site_url
 		FROM articles a JOIN feeds f ON f.id = a.feed_id WHERE a.id = ? AND a.user_id = ?`, id, userID)
 	err := row.Scan(&a.ID, &a.FeedID, &a.FeedTitle, &a.FeedHasIcon, &a.Title, &a.URL, &a.Preview, &a.Thumbnail,
-		&a.PublishedAt, &a.Read, &a.Starred, &a.Words, &a.Author, &a.Content, &a.FullContent, &a.SiteURL)
+		&a.PublishedAt, &a.Read, &a.Starred, &a.Words, &a.Saved, &a.Author, &a.Content, &a.FullContent, &a.SiteURL)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}

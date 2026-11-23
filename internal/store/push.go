@@ -171,7 +171,7 @@ type FeedUnread struct {
 func (s *Store) TopUnreadFeeds(userID int64, limit int) ([]FeedUnread, error) {
 	rows, err := s.DB.Query(`SELECT COALESCE(NULLIF(f.custom_title, ''), NULLIF(f.title, ''), f.url), COUNT(*) AS n
 		FROM articles a JOIN feeds f ON f.id = a.feed_id
-		WHERE a.user_id = ? AND a.read = 0 GROUP BY f.id ORDER BY n DESC LIMIT ?`, userID, limit)
+		WHERE a.user_id = ? AND a.read = 0 AND a.saved = 0 GROUP BY f.id ORDER BY n DESC LIMIT ?`, userID, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -189,6 +189,6 @@ func (s *Store) TopUnreadFeeds(userID int64, limit int) ([]FeedUnread, error) {
 
 func (s *Store) UnreadCount(userID int64) (int, error) {
 	var n int
-	err := s.DB.QueryRow(`SELECT COUNT(*) FROM articles WHERE user_id = ? AND read = 0`, userID).Scan(&n)
+	err := s.DB.QueryRow(`SELECT COUNT(*) FROM articles WHERE user_id = ? AND read = 0 AND saved = 0`, userID).Scan(&n)
 	return n, err
 }

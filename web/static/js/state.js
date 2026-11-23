@@ -53,6 +53,7 @@ export function sourceTitle(src) {
     case 'unread': return t('Unread');
     case 'starred': return t('Starred');
     case 'all': return t('All articles');
+    case 'saved': return t('Read later');
   }
   const [kind, raw] = src.split(':');
   const id = Number(raw);

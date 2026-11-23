@@ -89,7 +89,7 @@ func (s *Store) PasswordHash(userID int64) (string, error) {
 
 func (s *Store) ListUsers() ([]*User, error) {
 	rows, err := s.DB.Query(`SELECT u.id, u.username, u.is_admin, u.disabled, '{}', u.created_at,
-		(SELECT COUNT(*) FROM feeds f WHERE f.user_id = u.id)
+		(SELECT COUNT(*) FROM feeds f WHERE f.user_id = u.id AND f.kind = 'feed')
 		FROM users u ORDER BY u.username COLLATE NOCASE`)
 	if err != nil {
 		return nil, err

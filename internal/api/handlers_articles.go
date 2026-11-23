@@ -164,7 +164,7 @@ func (s *Server) articleJSON(a *store.Article) map[string]any {
 		"title": a.Title, "url": a.URL, "author": a.Author, "published_at": a.PublishedAt, "preview": a.Preview,
 		"read": a.Read, "starred": a.Starred, "site_url": a.SiteURL, "thumbnail": a.Thumbnail,
 		"content": s.images.Rewrite(a.Content), "has_full": a.HasFull, "words": a.Words,
-		"full_content": s.images.Rewrite(a.FullContent),
+		"full_content": s.images.Rewrite(a.FullContent), "saved": a.Saved,
 	}
 }
 
