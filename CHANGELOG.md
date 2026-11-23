@@ -2,7 +2,7 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 1.6.0
 
 - **Listen to the article**: the speaker button in the reader (or `L`) reads it aloud with the voice of the device,
   in the language of the article. A small player floats over it: back and forward by a paragraph, play and pause,
