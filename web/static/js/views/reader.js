@@ -6,7 +6,7 @@ import { get, patch, post } from '../api.js';
 import { state, findFeed } from '../state.js';
 import { getPrefs, onPrefsChange } from '../prefs.js';
 import { centerEmpty, clear, collapsingTitle, emptyBlock, feedIcon, keepPlace, fullDate, h, icon, iconButton, readingMinutes, showError, toast } from '../ui.js';
-import { openAppearance } from './settings.js';
+import { openAppearance } from './settings/appearance.js';
 import * as motion from '../motion.js';
 import * as sounds from '../sounds.js';
 import { enableImageViewer } from './imageviewer.js';

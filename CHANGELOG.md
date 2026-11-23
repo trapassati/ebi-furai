@@ -2,7 +2,7 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 1.6.1
 
 A general review of the code, server and app.
 
@@ -17,6 +17,7 @@ A general review of the code, server and app.
   a response too large).
 - The example in the filters' word field is in the language of the app.
 - Tests: the race detector and a check for known vulnerabilities run on every change; unused styles removed.
+- The settings code is split into a file per section (no visible change).
 
 ## 1.6.0
 

@@ -8,7 +8,7 @@ import { state, findFeed, findFolder } from '../state.js';
 import { actionSheet, confirmDialog, debounce, h, icon, openSheet, picker, showError, tile, toast, toggleSwitch } from '../ui.js';
 import * as motion from '../motion.js';
 import * as offline from '../offline/index.js';
-import { segmented } from './settings.js';
+import { segmented } from './settings/parts.js';
 import { sourcesChanged } from './sources.js';
 
 const numFmt = new Intl.NumberFormat(locale);
