@@ -10,7 +10,11 @@ def mark_all_and_undo(browser):
     open_collection(pg, 0)
     pg.click("#pane-list button[aria-label='Segna tutto come letto']")
     pg.click(".confirm button:has-text('Segna come letti')")
-    pg.wait_for_timeout(300)
+    # The counter rolls down to zero (0.9 s), long before the server answers.
+    for _ in range(12):
+        pg.wait_for_timeout(100)
+        if home_counts(pg)["unread"] == 0:
+            break
     check(home_counts(pg)["unread"] == 0, "home counters at zero at once")
     pg.wait_for_selector("#pane-list .empty-koi", state="visible", timeout=8000)
     check(unread() == 0, "server: everything read")
