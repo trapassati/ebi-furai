@@ -147,7 +147,7 @@ func Get(ctx context.Context, c *http.Client, rawURL string, headers map[string]
 	return c.Do(req)
 }
 
-var ErrTooLarge = errors.New("risposta troppo grande")
+var ErrTooLarge = errors.New("response too large")
 
 // ReadLimited reads at most max bytes from r; it fails if the body is larger.
 func ReadLimited(r io.Reader, max int64) ([]byte, error) {

@@ -59,7 +59,7 @@ func (s *Server) handlePushSettings(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if len(times) > maxDigestTimes {
-		writeError(w, http.StatusBadRequest, "al massimo 8 orari")
+		writeError(w, http.StatusBadRequest, "at most 8 times a day")
 		return
 	}
 	slices.Sort(times)

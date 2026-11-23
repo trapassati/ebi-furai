@@ -1,4 +1,4 @@
-// Command reader is a self-hosted RSS reader served as a PWA.
+// Command ebi-furai is a self-hosted RSS reader served as a PWA.
 package main
 
 import (
@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -109,6 +110,9 @@ func run() error {
 	ctx, cancel := context.WithCancel(sigCtx)
 	defer cancel()
 	restart := make(chan struct{}, 1)
+	// The work in the background ends before the database is closed: a
+	// backup or a notification is never cut off halfway.
+	var bg sync.WaitGroup
 
 	// Ad filter: on unless an admin turned it off in the settings.
 	var adOn atomic.Bool
@@ -120,13 +124,13 @@ func run() error {
 	}
 	ads := adblock.NewManager(cfg.DataDir, lists, adOn.Load)
 	content.AdFilter = ads.Current
-	go ads.Run(ctx)
+	bg.Go(func() { ads.Run(ctx) })
 
 	pushSvc, err := push.NewService(st, cfg)
 	if err != nil {
 		return err
 	}
-	go pushSvc.Run(ctx)
+	bg.Go(func() { pushSvc.Run(ctx) })
 
 	fetcher := feeds.New(st, cfg)
 	fetchDone := make(chan struct{})
@@ -154,7 +158,7 @@ func run() error {
 			}
 		}
 		apiSrv.SetUpdates(uc)
-		go uc.Run(ctx)
+		bg.Go(func() { uc.Run(ctx) })
 	}
 	if cfg.Backups {
 		bk := backup.NewManager(st.DB, cfg.BackupDir, cfg.BackupDaily, cfg.BackupWeekly, cfg.Location)
@@ -165,7 +169,7 @@ func run() error {
 			default:
 			}
 		})
-		go bk.Run(ctx)
+		bg.Go(func() { bk.Run(ctx) })
 	}
 
 	srv := &http.Server{
@@ -198,6 +202,13 @@ func run() error {
 	defer cancelShutdown()
 	srv.Shutdown(shutdownCtx)
 	<-fetchDone
+	done := make(chan struct{})
+	go func() { bg.Wait(); close(done) }()
+	select {
+	case <-done:
+	case <-shutdownCtx.Done():
+		slog.Warn("background work still running at shutdown")
+	}
 	return result
 }
 

@@ -3,10 +3,12 @@ package api
 import (
 	"context"
 	"errors"
+	"io"
 	"log/slog"
 	"mime"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -64,13 +66,12 @@ func (s *Server) savePage(ctx context.Context, userID int64, raw string) (id int
 	return id, p.Title, problem, again, err
 }
 
-// saveURL checks an address given to save.
+var linkRE = regexp.MustCompile(`(?i)https?://\S+`)
+
+// saveURL checks an address given to save. The share sheet of some apps
+// gives "Title https://…": the first link in the text is taken.
 func saveURL(raw string) (string, bool) {
-	raw = strings.TrimSpace(raw)
-	// The share sheet may give "Title https://…": keep the link.
-	if i := strings.LastIndex(raw, "http"); i > 0 && strings.ContainsAny(raw[:i], " \n") {
-		raw = strings.TrimSpace(raw[i:])
-	}
+	raw = linkRE.FindString(strings.TrimSpace(raw))
 	u, err := url.Parse(raw)
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || len(raw) > 2048 {
 		return "", false
@@ -182,16 +183,12 @@ func (s *Server) handleSaveWithKey(w http.ResponseWriter, r *http.Request) {
 		}
 		raw = r.FormValue("url")
 	default:
-		var b strings.Builder
-		buf := make([]byte, 1024)
-		for {
-			n, err := r.Body.Read(buf)
-			b.Write(buf[:n])
-			if err != nil {
-				break
-			}
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			writeError(w, http.StatusRequestEntityTooLarge, "invalid request")
+			return
 		}
-		raw = b.String()
+		raw = string(b)
 	}
 	if raw == "" {
 		raw = r.URL.Query().Get("url")

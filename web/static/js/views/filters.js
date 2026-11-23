@@ -125,7 +125,7 @@ function scopeOptions() {
 function newFilter({ feed, after }) {
   let action = 'hide';
   const words = h('input', {
-    class: 'field', type: 'text', placeholder: t('calcio, serie a, juve*'), autocomplete: 'off',
+    class: 'field', type: 'text', placeholder: t('football, premier league, chelsea*'), autocomplete: 'off',
     autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false', enterkeyhint: 'done',
   });
   const where = picker({ options: scopeOptions(), value: feed ? 'feed:' + feed.id : 'all', title: t('Where') });

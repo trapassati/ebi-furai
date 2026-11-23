@@ -4,6 +4,9 @@ package i18n
 // the code. %s and %d are placeholders: what they stand for is kept (and
 // translated too, when it is itself a known message).
 var it = map[string]string{
+	"at most 8 times a day":     "al massimo 8 orari",
+	"response too large":        "risposta troppo grande",
+	"listing the folder: %s":    "lettura della cartella: %s",
 	"that is not a web address": "questo non è un indirizzo web",
 	"an app password is needed, as \"Authorization: Bearer <app password>\"": "serve una password per le app, come \"Authorization: Bearer <password per le app>\"",
 	"wrong app password": "password per le app sbagliata",

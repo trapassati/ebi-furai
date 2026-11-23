@@ -221,7 +221,16 @@ func (s *Server) grSubscriptions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	subs := make([]map[string]any, 0, len(list))
+	// "Read later" has no feed address: apps get the app's own.
+	scheme := "http"
+	if s.secure(r) {
+		scheme = "https"
+	}
+	appURL := scheme + "://" + r.Host + "/"
 	for _, f := range list {
+		if strings.HasPrefix(f.URL, "ebi-furai:") {
+			f.URL, f.SiteURL = appURL, appURL
+		}
 		cats := []map[string]string{}
 		if f.Folder != "" {
 			cats = append(cats, map[string]string{"id": grLabelID(f.Folder), "label": f.Folder})

@@ -214,6 +214,7 @@ export const IT = {
   "Folder": "Cartella",
   "Folder address": "Indirizzo della cartella",
   "Folder {0}": "Cartella {0}",
+  "football, premier league, chelsea*": "calcio, serie a, juve*",
   "For example: Reeder on the iPhone": "Per esempio: Reeder sull'iPhone",
   "For feeds that only publish the beginning: the server downloads the article from the site as soon as it arrives, so it's ready offline too.": "Per i feed che pubblicano solo l'inizio: il server scarica l'articolo dal sito appena arriva, così è pronto anche offline.",
   "For password-protected feeds (HTTP authentication). They are stored encrypted on the server.": "Per i feed protetti da password (autenticazione HTTP). Vengono salvati cifrati sul server.",

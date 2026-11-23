@@ -224,6 +224,12 @@ async function reloadSources({ quiet = false } = {}) {
 }
 const reloadSourcesSoon = debounce(reloadSources, 1200);
 
+// The counters were just changed here: an answer already on its way was
+// asked before the change, and would bring the old figures back.
+function dropSourcesInFlight() {
+  sourcesReq++;
+}
+
 // The server fetches feeds on its own schedule: while the app is open the
 // counters are read again every minute, and when going back to the home if
 // they are older than 15 seconds, so new articles always show up there.
@@ -251,9 +257,10 @@ async function refreshAll() {
 // Keeps counters in sync when an article changes read state locally.
 function readChanged(item, read) {
   const s = state.sources;
+  dropSourcesInFlight();
   if (s && item.saved) {
     // A page saved for later counts only in its own collection.
-    s.saved = Math.max(0, s.saved + (read ? -1 : 1));
+    s.saved = Math.max(0, (s.saved || 0) + (read ? -1 : 1));
     renderSoon();
   } else if (s) {
     const delta = read ? -1 : 1;
@@ -277,6 +284,7 @@ function readChanged(item, read) {
 function markedAllRead(source) {
   const s = state.sources;
   if (!s) return;
+  dropSourcesInFlight();
   const [kind, raw] = source.split(':');
   const id = Number(raw);
   const feeds = s.feeds.concat(...s.folders.map((f) => f.feeds));
@@ -309,6 +317,7 @@ function renderSoon() {
 }
 
 function starChanged(item, starred) {
+  dropSourcesInFlight();
   if (state.sources) {
     state.sources.starred = Math.max(0, state.sources.starred + (starred ? 1 : -1));
     renderSoon();
@@ -398,6 +407,9 @@ function parseHash() {
 }
 
 async function start(me) {
+  // Signed in again as someone else (the session had expired): the app
+  // starts afresh, with nothing of the other account on screen.
+  if (state.me && state.me.user.id !== me.user.id) { location.reload(); return; }
   state.me = me;
   setCsrf(me.csrf);
   await offline.init(me);

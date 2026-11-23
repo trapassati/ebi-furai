@@ -2,6 +2,22 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+A general review of the code, server and app.
+
+- Counters no longer flash back to old figures for a moment after "mark all as read" (an answer already on its
+  way was applied after the change).
+- Signing in as another person after a session expired starts the app afresh.
+- The server stops its background work (backups, notifications, the ad lists, the update check) before closing
+  the database, at shutdown and after a restore.
+- Read later: the address is found anywhere in what the share sheet sends; apps syncing through the Google Reader
+  API see a real address for the Read later feed.
+- Messages that were only in Italian in the code are now in English and translated (8 notification times at most,
+  a response too large).
+- The example in the filters' word field is in the language of the app.
+- Tests: the race detector and a check for known vulnerabilities run on every change; unused styles removed.
+
 ## 1.6.0
 
 - **Listen to the article**: the speaker button in the reader (or `L`) reads it aloud with the voice of the device,
