@@ -186,5 +186,91 @@ def reading_appearance(browser):
     check(not pg.errors, "no page errors")
 
 
+# A stand-in for the device's voice: it records what it is asked to say and
+# "says" each piece in 40 ms.
+FAKE_SPEECH = """(() => {
+  window.__said = [];
+  const pending = new Set();
+  const fake = {
+    speaking: false,
+    getVoices: () => [
+      { lang: 'it-IT', name: 'Alice', localService: true, default: true },
+      { lang: 'en-US', name: 'Samantha (Enhanced)', localService: true, default: false },
+    ],
+    speak(u) {
+      window.__said.push({ text: u.text, lang: u.lang, voice: u.voice && u.voice.name, rate: u.rate });
+      fake.speaking = true;
+      const id = setTimeout(() => { pending.delete(id); fake.speaking = pending.size > 0; u.onend && u.onend(); }, 40);
+      pending.add(id);
+    },
+    cancel() { pending.forEach(clearTimeout); pending.clear(); fake.speaking = false; },
+    pause() {}, resume() {},
+    addEventListener() {}, removeEventListener() {},
+  };
+  Object.defineProperty(window, 'speechSynthesis', { value: fake, configurable: true });
+  window.SpeechSynthesisUtterance = class { constructor(text) { this.text = text; this.lang = ''; this.voice = null; this.rate = 1; } };
+})()"""
+
+
+def listen_to_article(browser):
+    ctx = context(browser)
+    ctx.add_init_script(FAKE_SPEECH)
+    pg = login(ctx)
+    said = lambda: pg.evaluate("window.__said.length")
+    open_collection(pg, 3)
+    pg.click(".arow >> nth=0")
+    pg.wait_for_selector(".article-body")
+    pg.wait_for_timeout(600)
+    pg.click("#pane-reader button[aria-label=Ascolta]")
+    pg.wait_for_selector(".listen-bar")
+    pg.wait_for_timeout(100)
+    check(said() >= 1, "it starts reading")
+    first = pg.evaluate("window.__said[0]")
+    check(first["rate"] == 1, f"at normal speed ({first})")
+    check(pg.locator(".reader-title.speaking, .article-body .speaking").count() == 1, "one paragraph is highlighted")
+
+    # Pause: nothing more is said.
+    pg.click(".listen-play")
+    n = said()
+    pg.wait_for_timeout(300)
+    check(said() == n, "pause stops the voice")
+    check(pg.locator(".listen-play[aria-label=Riproduci]").count() == 1, "the button turns into play")
+    where = pg.inner_text(".listen-where")
+    pg.click(".listen-bar button[aria-label='Paragrafo successivo']")
+    check(pg.inner_text(".listen-where") != where, f"next paragraph ({where} -> {pg.inner_text('.listen-where')})")
+
+    # Speed: 1.25 from the next piece, remembered on the device.
+    pg.click(".listen-rate")
+    check(pg.inner_text(".listen-rate") == "1,25×", f"speed shown ({pg.inner_text('.listen-rate')})")
+    pg.click(".listen-play")
+    pg.wait_for_timeout(100)
+    check(pg.evaluate("window.__said[window.__said.length - 1].rate") == 1.25, "read at the new speed")
+
+    # Closing stops and clears the highlight.
+    pg.click(".listen-bar button[aria-label='Smetti di ascoltare']")
+    pg.wait_for_timeout(500)
+    check(pg.locator(".listen-bar").count() == 0 and pg.locator(".speaking").count() == 0, "closed, nothing highlighted")
+
+    # To the end: the player closes by itself.
+    pg.click("#pane-reader button[aria-label=Ascolta]")
+    pg.wait_for_selector(".listen-bar")
+    pg.wait_for_selector(".listen-bar", state="detached", timeout=20000)
+    check(pg.locator(".speaking").count() == 0, "at the end the player closes")
+
+    # Another article stops it.
+    pg.click("#pane-reader button[aria-label=Ascolta]")
+    pg.wait_for_selector(".listen-bar")
+    pg.evaluate("document.querySelector('#pane-reader button[aria-label=\\'Articolo successivo\\']').click()")
+    pg.wait_for_timeout(600)
+    check(pg.locator(".listen-bar").count() == 0, "opening another article stops it")
+    guess = pg.evaluate("""import('/static/js/views/listen.js').then(m => [
+      m.guessLang('The new version of the library is out and it works with the older one for you', 'it'),
+      m.guessLang('La nuova versione della libreria è uscita e non funziona con quella che hai per il momento', 'en'),
+      m.guessLang('ok', 'it')])""")
+    check(guess == ["en", "it", "it"], f"the language of the article is guessed ({guess})")
+    pg.evaluate("localStorage.removeItem('prefs')")
+    check(not pg.errors, "no page errors")
+
+
 if __name__ == "__main__":
-    run(mark_all_and_undo, counters_follow_server, empty_states_aligned, preferences_per_device, image_viewer, sound_effects, reading_appearance)
+    run(mark_all_and_undo, counters_follow_server, empty_states_aligned, preferences_per_device, image_viewer, sound_effects, reading_appearance, listen_to_article)

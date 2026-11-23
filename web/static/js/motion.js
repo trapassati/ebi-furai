@@ -33,6 +33,15 @@ export function smoothScroll(scroller) {
   return lenis;
 }
 
+// scrollTo glides to a position (at once with reduced motion).
+export function scrollTo(scroller, y) {
+  const lenis = lenisFor.get(scroller);
+  const max = scroller.scrollHeight - scroller.clientHeight;
+  const to = Math.min(Math.max(y, 0), Math.max(max, 0));
+  if (lenis && !reduced.matches) lenis.scrollTo(to, { duration: 0.7 });
+  else scroller.scrollTo({ top: to, behavior: reduced.matches ? 'auto' : 'smooth' });
+}
+
 // scrollTop sets the position, keeping Lenis in sync.
 export function scrollTop(scroller, y = 0) {
   const lenis = lenisFor.get(scroller);

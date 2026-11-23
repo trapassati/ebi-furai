@@ -713,6 +713,34 @@
   }
   .app-secret { font-size: 1.125rem; padding: calc(12px * var(--ui)) calc(18px * var(--ui)); }
 
+  /* Listen: the player floats above the dock; the paragraph being read is tinted. */
+  .listen-bar {
+    position: absolute; z-index: 21; left: 50%; transform: translateX(-50%);
+    bottom: calc(max(calc(var(--safe-bottom) - calc(6px * var(--ui))), calc(12px * var(--ui))) + calc(62px * var(--ui)));
+    display: flex; align-items: center; gap: calc(2px * var(--ui));
+    width: max-content; max-width: calc(100% - calc(24px * var(--ui)));
+    height: calc(52px * var(--ui)); padding: 0 calc(6px * var(--ui)); border-radius: 9999px; color: var(--c-fg);
+  }
+  .listen-btn {
+    flex: none; width: calc(42px * var(--ui)); height: calc(42px * var(--ui)); border-radius: 9999px; color: var(--c-icon);
+    display: inline-flex; align-items: center; justify-content: center; transition: background-color 200ms, transform 160ms cubic-bezier(.3, 1.5, .5, 1);
+  }
+  .listen-btn:active { transform: scale(0.9); }
+  .listen-btn:disabled { opacity: 0.35; }
+  .listen-play { width: calc(46px * var(--ui)); height: calc(46px * var(--ui)); color: #fff; background: var(--grad-primary); box-shadow: var(--shadow-btn); }
+  .listen-rate {
+    flex: none; min-width: calc(48px * var(--ui)); height: calc(34px * var(--ui)); padding: 0 calc(8px * var(--ui)); border-radius: 9999px;
+    font-size: 0.875rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; color: var(--c-accent); background: var(--c-hover);
+  }
+  .listen-where { flex: none; min-width: calc(58px * var(--ui)); padding: 0 calc(4px * var(--ui)); text-align: center; font-size: 0.8125rem; color: var(--c-muted); font-variant-numeric: tabular-nums; }
+  .is-listening .reader-pad { height: calc(var(--safe-bottom) + calc(160px * var(--ui))); }
+  .article-body .listen-run.speaking { -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+  .article-body .speaking, .reader-title.speaking {
+    background: color-mix(in srgb, var(--c-accent) 12%, transparent); border-radius: calc(8px * var(--ui));
+    box-shadow: 0 0 0 calc(6px * var(--ui)) color-mix(in srgb, var(--c-accent) 12%, transparent);
+    transition: background-color 300ms, box-shadow 300ms;
+  }
+
   /* Update available: a card above the toasts, and the release notes. */
   .update-card {
     pointer-events: auto; display: flex; align-items: center; gap: calc(12px * var(--ui));
@@ -989,6 +1017,8 @@ html.desk body {
 .desk .gbtn:not(:disabled):active, .desk .seg-btn:not(:disabled):active { transform: scale(0.94); }
 .desk #pane-list .dock > .dock-group { order: -1; }
 .desk .dock-pad, .desk .reader-pad { height: calc(28px * var(--ui)); }
+.desk .listen-bar { bottom: calc(18px * var(--ui)); }
+.desk .is-listening .reader-pad { height: calc(96px * var(--ui)); }
 
 /* ---- the article list: cards, sized for a computer ---- */
 .desk .list-head { padding-top: calc(4px * var(--ui)); padding-bottom: calc(12px * var(--ui)); }

@@ -15,6 +15,7 @@ export const SHORTCUTS = [
   ['S', t('Add to or remove from starred')],
   ['F', t('Full text')],
   ['V', t('Open the original article')],
+  ['L', t('Listen to the article')],
   ['⇧ A', t('Mark all as read')],
   ['/', t('Search')],
   ['R', t('Refresh feeds')],
@@ -69,6 +70,7 @@ export function installShortcuts(ctx) {
     else if (key === 's' && article) readerActions.toggleStar();
     else if (key === 'f' && article) readerActions.toggleFull();
     else if (key === 'v' && article) readerActions.openOriginal();
+    else if (key === 'l' && article) readerActions.listen();
     else if (key === 'A' && e.shiftKey && listVisible()) markAllReadShortcut();
     else if (key === '/') {
       const home = document.querySelector('#pane-sources input[type="search"], #pane-sources input');

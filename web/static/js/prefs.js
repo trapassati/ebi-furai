@@ -17,7 +17,7 @@ export const FONTS = {
 export const DEFAULTS = {
   theme: 'light', font: 'outfit', size: 18, filter: 'unread', order: 'new',
   offline: true, offline_limit: 200, offline_images: false, book: true, mark_on_scroll: false, thumbs: true,
-  list_size: 1, line_height: 1.65, sounds: false, sound_volume: 60,
+  list_size: 1, line_height: 1.65, sounds: false, sound_volume: 60, listen_rate: 1,
 };
 
 // Choices offered in the settings.

@@ -26,6 +26,7 @@ const SHELL = [
   '/static/js/views/sources.js',
   '/static/js/views/list.js',
   '/static/js/views/reader.js',
+  '/static/js/views/listen.js',
   '/static/js/views/imageviewer.js',
   '/static/js/views/apps.js',
   '/static/js/views/update.js',

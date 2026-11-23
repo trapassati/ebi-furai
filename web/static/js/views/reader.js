@@ -10,6 +10,7 @@ import { openAppearance } from './settings.js';
 import * as motion from '../motion.js';
 import * as sounds from '../sounds.js';
 import { enableImageViewer } from './imageviewer.js';
+import { startListening, stopListening, supported as canListen } from './listen.js';
 
 let ctx;
 let navDir = 0; // +1 next, -1 previous: direction of the content animation
@@ -54,6 +55,7 @@ export function mountReader(pane, context) {
     h('div', { class: 'dock-group wide glass' },
       btnRead, btnStar, btnFull,
       h('button', { class: 'seg-btn font-semibold text-[1.1875rem]', 'aria-label': t('Appearance'), onclick: openAppearance, text: 'Aa' }),
+      canListen() ? seg('o-speaker-wave', t('Listen'), listen, 'L') : null,
       seg('o-arrow-top-right-on-square', t('Open on the site'), openOriginal, 'V'),
       seg('o-arrow-up-on-square', t('Share'), share)));
   pane.append(bar, scroller);
@@ -68,6 +70,7 @@ export function mountReader(pane, context) {
 }
 
 export function showEmptyReader() {
+  stopListening();
   state.article = null;
   clear(wrap);
   feedTitleEl.textContent = '';
@@ -129,6 +132,7 @@ function renderHeaderOnly(item) {
 function render() {
   const a = state.article;
   if (!a) return;
+  stopListening(); // another article, or the full text in place of the feed's
   clear(wrap);
   toolbar.classList.remove('hidden');
   motion.scrollTop(scroller, 0);
@@ -197,7 +201,13 @@ export const readerActions = {
   next: () => step(1), prev: () => step(-1),
   toggleRead: () => toggleRead(), toggleStar: () => toggleStar(),
   toggleFull: () => toggleFull(), openOriginal: () => openOriginal(),
+  listen: () => listen(),
 };
+
+function listen() {
+  if (!state.article) return;
+  startListening(scroller.parentElement, scroller, wrap, { book: () => book });
+}
 
 function step(dir) {
   const items = state.list.items;
