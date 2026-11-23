@@ -27,6 +27,10 @@
   <img src="docs/images/iphone-reader-dark.webp" width="250" alt="Reader on iPhone, dark theme">
 </p>
 
+<p align="center">
+  <img src="docs/images/desktop-light.webp" width="760" alt="Ebi Furai on a computer: sidebar, list and article">
+</p>
+
 Ebi Furai is one small server (a single Go binary with SQLite) and an installable web app. You run it on
 your own machine: a home server, a Raspberry Pi, a NAS, a VPS. Your feeds, your reading and your accounts
 stay there.
