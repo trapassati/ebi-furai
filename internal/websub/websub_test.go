@@ -394,3 +394,72 @@ func TestPrivateFeedsAreNotSubscribed(t *testing.T) {
 		t.Fatalf("%d requests for a feed with a password", n)
 	}
 }
+
+func TestPublicOrigin(t *testing.T) {
+	for in, want := range map[string]string{
+		"https://ebi-furai.example.org":   "https://ebi-furai.example.org",
+		"https://Reader.Example.org:8443": "https://reader.example.org:8443",
+		"https://8.8.8.8":                 "https://8.8.8.8",
+		"https://ebi-furai.example.org/":  "https://ebi-furai.example.org",
+		"http://ebi-furai.example.org":    "",
+		"https://192.168.1.5:9099":        "",
+		"https://localhost":               "",
+		"https://nas":                     "",
+		"https://nas.local":               "",
+		"https://reader.home.arpa":        "",
+		"https://reader.lan":              "",
+		"null":                            "",
+		"":                                "",
+	} {
+		got, ok := PublicOrigin(in)
+		if got != want || ok != (want != "") {
+			t.Errorf("%q: got %q %v, want %q", in, got, ok, want)
+		}
+	}
+}
+
+// Without PUBLIC_URL the address comes from the administrators' browsers;
+// a second one takes over only once the first is no longer used.
+func TestLearnedAddress(t *testing.T) {
+	conn, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	st := store.New(conn)
+	m := New(st, "", nil)
+	clock := time.Now()
+	m.now = func() time.Time { return clock }
+	if m.Base() != "" {
+		t.Fatal("an address before any visit")
+	}
+	m.check(context.Background()) // nothing to do, and no request
+	m.Learn("http://192.168.1.5:9099")
+	m.Learn("https://nas.local")
+	if m.Base() != "" {
+		t.Fatalf("learned a local address: %q", m.Base())
+	}
+	m.Learn("https://reader.example.org")
+	if m.Base() != "https://reader.example.org" || m.Callback("t") != "https://reader.example.org/websub/t" {
+		t.Fatalf("base %q", m.Base())
+	}
+	clock = clock.Add(time.Hour)
+	m.Learn("https://other.example.org")
+	if m.Base() != "https://reader.example.org" {
+		t.Fatal("switched while the first address is in use")
+	}
+	clock = clock.Add(keepLearned + time.Minute)
+	m.Learn("https://other.example.org")
+	if m.Base() != "https://other.example.org" {
+		t.Fatal("did not move to the address in use")
+	}
+	// Kept across restarts; PUBLIC_URL always wins.
+	if New(st, "", nil).Base() != "https://other.example.org" {
+		t.Fatal("not kept")
+	}
+	fixed := New(st, "https://set.example.org/", nil)
+	fixed.Learn("https://reader.example.org")
+	if fixed.Base() != "https://set.example.org" {
+		t.Fatalf("PUBLIC_URL overridden: %q", fixed.Base())
+	}
+}

@@ -13,9 +13,11 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/trapassati/ebi-furai/internal/netsafe"
@@ -33,12 +35,17 @@ const (
 	notifyGap      = 15 // seconds between two fetches caused by notifications
 	maxNotifyBody  = 10 << 20
 	maxChallenge   = 1024
+	// keepLearned: a learned address gives way to another one only after
+	// it has not been used for this long (two addresses in use do not make
+	// the subscriptions move back and forth).
+	keepLearned    = 24 * time.Hour
+	settingLearned = "websub_public_url"
 )
 
 // Manager subscribes feeds to their hubs and receives the hubs' calls.
 type Manager struct {
 	store  *store.Store
-	base   string // the public address of the server, without a final "/"
+	fixed  string // PUBLIC_URL, without a final "/"; empty = learned
 	client *http.Client
 	wake   func() // asks the fetcher to look for due feeds
 	kick   chan struct{}
@@ -46,24 +53,105 @@ type Manager struct {
 	// checkURL accepts a hub address (public http(s) only; tests use
 	// local hubs).
 	checkURL func(string) (*url.URL, error)
+
+	mu          sync.Mutex
+	learned     string    // the public address seen in the administrators' browsers
+	learnedSeen time.Time // when it was last used
 }
 
-// New returns a manager for a server reachable at publicURL; wake is called
-// when a notification makes feeds due.
+// New returns a manager for a server reachable at publicURL, or, when it is
+// empty, at the address the administrators open the app from (see Learn);
+// wake is called when a notification makes feeds due.
 func New(st *store.Store, publicURL string, wake func()) *Manager {
-	return &Manager{
+	m := &Manager{
 		store:    st,
-		base:     strings.TrimRight(publicURL, "/"),
+		fixed:    strings.TrimRight(publicURL, "/"),
 		client:   netsafe.NewClient(requestTimeout),
 		wake:     wake,
 		kick:     make(chan struct{}, 1),
 		now:      time.Now,
 		checkURL: netsafe.ValidateURL,
 	}
+	if m.fixed == "" {
+		m.learned, _ = st.Setting(settingLearned)
+		m.learnedSeen = time.Now()
+	}
+	return m
+}
+
+// Base is the public address of the server, without a final "/": empty
+// while it is not known (then nothing is subscribed).
+func (m *Manager) Base() string {
+	if m.fixed != "" {
+		return m.fixed
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.learned
 }
 
 // Callback is the address a hub calls for a subscription.
-func (m *Manager) Callback(token string) string { return m.base + "/websub/" + token }
+func (m *Manager) Callback(token string) string { return m.Base() + "/websub/" + token }
+
+// Learn notes the address an administrator's browser opened the app from
+// (its Origin header), when it is an https address on the internet: that
+// is where the hubs can call. Nothing to set by hand, and a new domain is
+// picked up by itself (the subscriptions then move to it).
+func (m *Manager) Learn(origin string) {
+	if m.fixed != "" {
+		return
+	}
+	base, ok := PublicOrigin(origin)
+	if !ok {
+		return
+	}
+	m.mu.Lock()
+	now := m.now()
+	if base == m.learned {
+		m.learnedSeen = now
+		m.mu.Unlock()
+		return
+	}
+	if m.learned != "" && now.Sub(m.learnedSeen) < keepLearned {
+		m.mu.Unlock()
+		return
+	}
+	m.learned, m.learnedSeen = base, now
+	m.mu.Unlock()
+	if err := m.store.SetSetting(settingLearned, base); err != nil {
+		slog.Error("websub: saving the public address", "err", err)
+	}
+	slog.Info("websub: public address learned from the app", "url", base)
+	m.Kick()
+}
+
+// PublicOrigin returns origin ("https://host[:port]") when hubs on the
+// internet can plausibly reach it: https, and a public IP or a domain name
+// that is not for local networks only.
+func PublicOrigin(origin string) (string, bool) {
+	u, err := url.Parse(strings.TrimSpace(origin))
+	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || (u.Path != "" && u.Path != "/") ||
+		u.RawQuery != "" || u.Fragment != "" {
+		return "", false
+	}
+	host := strings.ToLower(strings.TrimSuffix(u.Hostname(), "."))
+	if ip, err := netip.ParseAddr(host); err == nil {
+		if !netsafe.IsPublicIP(ip) {
+			return "", false
+		}
+	} else {
+		if !strings.Contains(host, ".") {
+			return "", false // localhost, a machine name
+		}
+		for _, local := range []string{".local", ".lan", ".home", ".home.arpa", ".internal", ".intranet", ".corp",
+			".localhost", ".localdomain", ".test", ".example", ".invalid"} {
+			if strings.HasSuffix(host, local) {
+				return "", false
+			}
+		}
+	}
+	return "https://" + strings.ToLower(u.Host), true
+}
 
 func (m *Manager) Kick() {
 	select {
@@ -112,6 +200,9 @@ func (m *Manager) Run(ctx context.Context) {
 }
 
 func (m *Manager) check(ctx context.Context) {
+	if m.Base() == "" {
+		return // not known yet: an administrator has not opened the app over https
+	}
 	list, err := m.store.WebSubs()
 	if err != nil {
 		slog.Error("websub: reading the subscriptions", "err", err)

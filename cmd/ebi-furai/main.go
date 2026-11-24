@@ -135,7 +135,7 @@ func run() error {
 
 	fetcher := feeds.New(st, cfg)
 	var instant *websub.Manager
-	if cfg.PublicURL != "" {
+	if !cfg.InstantOff {
 		instant = websub.New(st, cfg.PublicURL, fetcher.Wake)
 		fetcher.SetWebSub(instant)
 		bg.Go(func() { instant.Run(ctx) })

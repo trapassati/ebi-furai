@@ -197,21 +197,26 @@ Every setting is optional. With Docker they go in `.env`; with the service in
 | `BACKUP_DIR` | `DATA_DIR/backups` | where they go |
 | `UPDATE_CHECK` | `true` | look for a new release on GitHub twice a day and tell the administrators |
 | `SOURCE_URL` | this repository | where the source code is offered (see [License](#license)) |
-| `PUBLIC_URL` | | the address the server is reached at from the internet, e.g. `https://reader.example.com`: turns on [instant updates](#instant-updates) |
+| `PUBLIC_URL` | learned | the address the server is reached at from the internet, for [instant updates](#instant-updates); `off` turns them off |
 
 ## Instant updates
 
 Many sites (WordPress.com, Blogger, Medium, Ghost, most podcast hosts and more) announce their feed to a WebSub
-hub, which tells the subscribers as soon as something is published. When `PUBLIC_URL` is set, Ebi Furai subscribes
-every feed that names a hub, and new articles arrive within seconds instead of at the next refresh. The feed
-settings show **Instant updates** where it is on; those feeds are still checked every few hours, in case a
-notification gets lost.
+hub, which tells the subscribers as soon as something is published. Ebi Furai subscribes every feed that names a
+hub, and new articles arrive within seconds instead of at the next refresh. The feed settings show **Instant
+updates** where it is on; those feeds are still checked every few hours, in case a notification gets lost.
 
-The hubs call `PUBLIC_URL/websub/…`, which must be reachable from the internet without signing in (with Cloudflare
-Tunnel this works as is; with Cloudflare Access or another login in front, let `/websub/` through). Every
+There is nothing to set up: the server learns its public address the first time an administrator uses the app
+from an `https://` address on the internet (a tunnel, a reverse proxy), and follows it if it changes. Opened only
+from home (`http://`, a local name or address) the hubs could not reach it, so nothing is subscribed. To give the
+address yourself set `PUBLIC_URL` (for example `https://reader.example.com`); `PUBLIC_URL=off` turns instant
+updates off.
+
+The hubs call `…/websub/…` on that address, which must be reachable from the internet without signing in (with
+Cloudflare Tunnel this works as is; with Cloudflare Access or another login in front, let `/websub/` through). Every
 subscription has its own secret, and a notification that is not signed with it is ignored; a notification only
 makes the server download the feed as usual. Feeds that need a password are never announced to a hub, and a feed
-followed by several people has a single subscription. Without `PUBLIC_URL` nothing changes.
+followed by several people has a single subscription.
 
 ## Backups and restore
 

@@ -4,9 +4,10 @@ All notable changes are listed here. Versions follow [Semantic Versioning](https
 
 ## Unreleased
 
-- **Instant updates (WebSub)**: with `PUBLIC_URL` set to the address the server is reached at from the internet,
-  feeds whose site uses a WebSub hub get new articles within seconds of their publication instead of at the next
-  refresh. The feed settings say where it is on. One subscription per feed address, however many people follow
+- **Instant updates (WebSub)**: feeds whose site uses a WebSub hub get new articles within seconds of their
+  publication instead of at the next refresh. Nothing to set up: the server learns its public address when an
+  administrator uses the app from an `https://` address on the internet (`PUBLIC_URL` sets it by hand,
+  `PUBLIC_URL=off` turns the feature off). The feed settings say where it is on. One subscription per feed address, however many people follow
   it, renewed before it ends and cancelled when nobody follows the feed any more; feeds with a password are left
   out. Notifications must be signed with the subscription's own secret, and only make the server download the
   feed as usual; those feeds are still checked every three hours as a safety net.

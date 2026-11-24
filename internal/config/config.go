@@ -41,7 +41,8 @@ type Config struct {
 	BackupWeekly    int    // how many weekly copies are kept after those
 	UpdateCheck     bool   // ask GitHub now and then for a newer release
 	UpdateCheckURL  string // where (tests; default the official repository)
-	PublicURL       string // the address the server is reached at from the internet, without a final "/" (WebSub); empty = off
+	PublicURL       string // the address the server is reached at from the internet, without a final "/" (WebSub); empty = learned
+	InstantOff      bool   // PUBLIC_URL=off: no WebSub subscriptions
 }
 
 func (c *Config) DBPath() string { return filepath.Join(c.DataDir, "reader.db") }
@@ -120,6 +121,10 @@ func Load() (*Config, error) {
 		if u, err := url.Parse(c.SourceURL); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
 			return nil, fmt.Errorf("SOURCE_URL: invalid address %q", c.SourceURL)
 		}
+	}
+	switch strings.ToLower(c.PublicURL) {
+	case "off", "false", "no", "0":
+		c.PublicURL, c.InstantOff = "", true
 	}
 	if c.PublicURL != "" {
 		u, err := url.Parse(c.PublicURL)

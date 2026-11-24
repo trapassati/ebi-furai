@@ -46,7 +46,7 @@ type Fetcher struct {
 	inflight sync.Map // feed id -> struct{}
 	wake     chan struct{}
 	fullWake chan struct{}   // new articles wait for their full text
-	websub   *websub.Manager // nil without PUBLIC_URL
+	websub   *websub.Manager // nil with PUBLIC_URL=off
 }
 
 func New(st *store.Store, cfg *config.Config) *Fetcher {

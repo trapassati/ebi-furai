@@ -8,7 +8,7 @@ import (
 	"github.com/trapassati/ebi-furai/internal/websub"
 )
 
-// SetWebSub turns on instant updates (PUBLIC_URL is set).
+// SetWebSub turns on instant updates (unless PUBLIC_URL=off).
 func (s *Server) SetWebSub(m *websub.Manager) { s.websub = m }
 
 // handleWebSub receives the calls of the WebSub hubs.

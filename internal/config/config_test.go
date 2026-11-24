@@ -17,6 +17,10 @@ func TestPublicURL(t *testing.T) {
 			t.Errorf("%q: got %q, want %q", in, c.PublicURL, want)
 		}
 	}
+	t.Setenv("PUBLIC_URL", "off")
+	if c, err := Load(); err != nil || !c.InstantOff || c.PublicURL != "" {
+		t.Errorf("off: %+v %v", c, err)
+	}
 	for _, bad := range []string{"reader.example.com", "ftp://example.com", "https://u:p@example.com", "https://example.com/?a=1"} {
 		t.Setenv("PUBLIC_URL", bad)
 		if _, err := Load(); err == nil {

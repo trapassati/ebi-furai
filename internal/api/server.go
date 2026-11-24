@@ -60,7 +60,7 @@ type Server struct {
 	tickets    ticketStore     // logins waiting for the two-step code
 	apiTouched apiTouch        // when app passwords were last marked as used
 	updates    *update.Checker // nil when UPDATE_CHECK=false
-	websub     *websub.Manager // nil without PUBLIC_URL
+	websub     *websub.Manager // nil with PUBLIC_URL=off
 }
 
 func New(cfg *config.Config, st *store.Store, f *feeds.Fetcher, images *content.ImageSigner, static *Static, ps *push.Service,
@@ -257,6 +257,12 @@ func (s *Server) requireAuth(next http.Handler) http.Handler {
 				writeError(w, http.StatusForbidden, "invalid CSRF token, reload the app")
 				return
 			}
+		}
+		// Instant updates learn the server's public address from the
+		// administrators' browsers (the Origin they send, which a page of
+		// another site cannot set on a request with our CSRF token).
+		if s.websub != nil && sess.User.IsAdmin && r.Method != http.MethodGet && r.Method != http.MethodHead {
+			s.websub.Learn(r.Header.Get("Origin"))
 		}
 		if time.Since(time.Unix(sess.LastSeen, 0)) > touchEvery {
 			if err := s.store.TouchSession(hash, s.clientIP(r), sessionTTL); err == nil {
