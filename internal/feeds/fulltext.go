@@ -67,7 +67,8 @@ func (f *Fetcher) fullTextBatch(ctx context.Context) int {
 			if err != nil {
 				slog.Debug("full text failed", "article", p.ID, "url", p.URL, "err", err)
 			}
-			if err := f.store.FullTextDone(p.ID, html, dedup.Words(content.PlainText(html))); err != nil {
+			text := content.PlainText(html)
+			if err := f.store.FullTextDone(p.ID, html, text, dedup.Words(text)); err != nil {
 				slog.Error("full text save", "article", p.ID, "err", err)
 			}
 		})

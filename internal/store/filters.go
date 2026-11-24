@@ -1,6 +1,7 @@
 package store
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -251,11 +252,24 @@ func (s *Store) PendingFullTexts(since int64, limit int) ([]PendingFullText, err
 }
 
 // FullTextDone records the result of a background download (html empty
-// when it failed: the reader keeps the feed's text).
-func (s *Store) FullTextDone(id int64, html string, words int) error {
-	_, err := s.DB.Exec(`UPDATE articles SET full_tried = 1, full_content = CASE WHEN ?1 <> '' THEN ?1 ELSE full_content END,
-		words = MAX(COALESCE(words, 0), ?2) WHERE id = ?3`, html, words, id)
-	return err
+// when it failed: the reader keeps the feed's text); text, its plain text,
+// goes into the search index.
+func (s *Store) FullTextDone(id int64, html, text string, words int) error {
+	tx, err := s.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`UPDATE articles SET full_tried = 1, full_content = CASE WHEN ?1 <> '' THEN ?1 ELSE full_content END,
+		words = MAX(COALESCE(words, 0), ?2) WHERE id = ?3`, html, words, id); err != nil {
+		return err
+	}
+	if html != "" {
+		if err := indexFullText(tx, id, text); err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 // ExpireFullTexts gives up on articles that waited too long (the feed was

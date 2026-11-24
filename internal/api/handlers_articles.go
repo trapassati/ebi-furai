@@ -256,8 +256,9 @@ func (s *Server) handleFullText(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadGateway, "full text not available: "+msg)
 			return
 		}
-		words := dedup.Words(content.PlainText(html))
-		if err := s.store.SetFullContent(uid, id, html, words); err != nil {
+		text := content.PlainText(html)
+		words := dedup.Words(text)
+		if err := s.store.SetFullContent(uid, id, html, text, words); err != nil {
 			storeError(w, err)
 			return
 		}

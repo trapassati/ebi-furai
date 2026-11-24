@@ -2,6 +2,17 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+- **Search finds words of the full text**: when an article's full text is downloaded (by hand or by the feed's
+  option), the search looks into it, not only into the feed's summary.
+- **"Read later" is safe from Reeder**: unsubscribing from it in a Google Reader app no longer deletes every saved
+  page; it stays where it is.
+- **Feeds that need a password**: a feed answering HTTP 401 now says to set the username and password in the feed
+  menu (Sign-in with password…), or that the ones set were not accepted.
+- **Articles without a title** are called "(senza titolo)" for people using the app in Italian, also the ones
+  already downloaded.
+
 ## 1.7.0
 
 - **Instant updates (WebSub)**: feeds whose site uses a WebSub hub get new articles within seconds of their
