@@ -2,7 +2,7 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 1.7.0
 
 - **Instant updates (WebSub)**: feeds whose site uses a WebSub hub get new articles within seconds of their
   publication instead of at the next refresh. Nothing to set up: the server learns its public address when an
