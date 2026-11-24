@@ -7,7 +7,7 @@ import { longPress, pullToRefresh, rowSwipe } from '../gestures.js';
 import { getPrefs, onPrefsChange, setPref } from '../prefs.js';
 import { state, sourceTitle, findFeed, findFolder } from '../state.js';
 import { status as offlineStatus, syncNow as offlineSync } from '../offline/index.js';
-import { actionSheet, centerEmpty, clear, collapsingTitle, confirmDialog, debounce, emptyBlock, feedIcon, h, icon, keepPlace, readingMinutes, relTime, showError, toast } from '../ui.js';
+import { actionSheet, centerEmpty, clear, collapsingTitle, confirmDialog, debounce, emptyBlock, feedIcon, h, icon, keepPlace, paperArt, readingMinutes, relTime, showError, toast } from '../ui.js';
 import * as motion from '../motion.js';
 import * as sounds from '../sounds.js';
 import { openSaveHelp, removeSaved } from './saved.js';
@@ -242,7 +242,7 @@ export function resetList() {
   scanIndex = 0;
   clear(listEl);
   emptyEl.classList.add('hidden');
-  swim(null);
+  float(null);
   motion.scrollTop(scroller, 0);
   loadMore();
 }
@@ -311,20 +311,22 @@ async function loadMore() {
   }
 }
 
-// "All read": the two koi turn slowly around each other, as if they were
-// swimming in a circle. One tween at a time, stopped when the list fills.
-let koiTween = null;
-function swim(img) {
-  if (koiTween) { koiTween.kill(); koiTween = null; }
-  if (!img || !motion.enabled() || !window.gsap) return;
-  koiTween = window.gsap.to(img, { rotation: -360, duration: 40, ease: 'none', repeat: -1 }); // counter-clockwise: the way they swim
+// "All read": the cards of the login page, floating the same way. Their
+// tweens stop when the list fills.
+let floating = null;
+function float(art) {
+  if (floating && window.gsap) window.gsap.killTweensOf(floating);
+  floating = null;
+  if (!art) return;
+  floating = [...art.children];
+  motion.float(floating);
 }
 
 function showEmpty() {
   const l = state.list;
   const empty = l.items.length === 0 && l.done;
   emptyEl.classList.toggle('hidden', !empty);
-  if (!empty) { swim(null); return; }
+  if (!empty) { float(null); return; }
   // Nothing left in the list: the reader column does not keep an article.
   ctx.closeArticle();
   clear(emptyEl);
@@ -337,14 +339,12 @@ function showEmpty() {
   else if (state.source === 'starred') { title = t('No starred articles'); hint = t('Swipe an article to the right to add it here.'); art = 's-star'; }
   else if (effectiveFilter() === 'starred') { title = t('No starred articles here'); hint = t('Swipe an article to the right to star it.'); art = 's-star'; }
   else if (effectiveFilter() === 'unread') { title = t('You\'ve read everything'); hint = isDesk() ? t('Click the list at the top to see the articles you already read.') : t('Tap the list at the bottom to see the articles you already read.'); art = 's-sparkles'; }
-  const koi = art === 's-sparkles'
-    ? h('img', { class: 'empty-koi', src: `/static/icons/koi.png?v=${encodeURIComponent(state.me.version || '')}`, alt: '' })
-    : null;
-  emptyEl.append(...emptyBlock(koi || h('div', { class: 'empty-art' }, icon(art)), title, hint));
+  const papers = art === 's-sparkles' ? paperArt('empty-papers') : null;
+  emptyEl.append(...emptyBlock(papers || h('div', { class: 'empty-art' }, icon(art)), title, hint));
   if (state.source === 'saved' && !l.query && !l.offline) {
     emptyEl.append(h('button', { class: 'btn btn-plain mt-4', onclick: openSaveHelp }, icon('o-bookmark', 'w-5 h-5'), t('How to save pages')));
   }
-  swim(koi);
+  float(papers);
   centerEmpty(scroller, emptyEl);
 }
 

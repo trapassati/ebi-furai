@@ -51,7 +51,6 @@ const SHELL = [
   '/static/fonts/ebi-furai-mark.woff2',
   '/static/icons/splash-icon.png',
   '/static/icons/shrimp.png',
-  '/static/icons/koi.png',
   '/static/js/views/about.js',
   '/static/js/views/health.js',
   '/static/js/views/feedsettings.js',

@@ -2,7 +2,7 @@
 
 import { t } from '../i18n.js';
 import { get, post } from '../api.js';
-import { h, clear, icon } from '../ui.js';
+import { h, clear, icon, paperArt } from '../ui.js';
 import * as motion from '../motion.js';
 
 export function showLogin(onSuccess) {
@@ -21,12 +21,7 @@ export function showLogin(onSuccess) {
   const submit = h('button', { type: 'submit', class: 'btn btn-primary w-full mt-1', text: t('Sign in') });
 
   // Original illustration: three article cards, floating.
-  // (classes only: the CSP forbids inline style attributes)
-  const paper = (cls, dot) => h('div', { class: 'paper ' + cls },
-    h('div', { class: 'flex items-center gap-2' }, h('span', { class: 'dot ' + dot }), h('i', { class: 't' })),
-    h('i'), h('i', { class: 'w-4/5' }), h('i', { class: 'w-[55%]' }));
-  const art = h('div', { class: 'welcome-art', 'aria-hidden': 'true' },
-    paper('p1', 'bg-[var(--k-purple)]'), paper('p2', 'bg-[var(--k-orange)]'), paper('p3', 'bg-[var(--k-blue)]'));
+  const art = paperArt();
 
   const form = h('form', { class: 'w-full max-w-sm flex flex-col gap-3 py-10' },
     h('h1', { class: 'welcome-title', text: t('Welcome') }),

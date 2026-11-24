@@ -34,7 +34,7 @@ def shot(pg, size, html, out, transparent=False, height=None):
 
 
 def main():
-    shrimp, koi = data_uri("shrimp.svg"), data_uri("koi.svg")
+    shrimp = data_uri("shrimp.svg")
     # The drawing's own center (its bounding box in the 512 view box) goes
     # to the center of the icon.
     cx, cy = 245 / 512, 273 / 512
@@ -53,9 +53,8 @@ def main():
         shot(pg, 512, page(512, f'''<div style="position:absolute;inset:24px;border-radius:108px;background:{BG};
             box-shadow:0 18px 40px -18px rgba(40,20,110,.55), inset 0 0 0 1px rgba(255,255,255,.12)"></div>
             <img src="{shrimp}" style="width:350px;height:350px;left:{256 - cx * 350}px;top:{256 - cy * 350}px">''', True), "splash-icon.png", True)
-        # Transparent drawings for the app (logo in the header, koi).
+        # Transparent drawing for the app (logo in the header).
         shot(pg, 192, page(192, f'<img src="{shrimp}" style="width:192px;height:192px;left:0;top:0">', True), "shrimp.png", True)
-        shot(pg, 320, page(320, f'<img src="{koi}" style="width:320px;height:320px;left:0;top:0">', True), "koi.png", True)
         b.close()
 
 
