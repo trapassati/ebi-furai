@@ -116,10 +116,18 @@ func TestFeedFullTextQueue(t *testing.T) {
 	if len(p) != 1 || p[0].URL != "https://e.com/a" {
 		t.Fatalf("turning it on queues the unread ones with a link: %v", p)
 	}
-	st.FullTextDone(p[0].ID, "<p>tutto</p>", 1)
+	st.FullTextDone(p[0].ID, "<p>tutto il racconto del pellicano</p>", "tutto il racconto del pellicano", 5)
 	a, _ := st.GetArticle(uid, p[0].ID)
 	if !a.HasFull {
 		t.Fatal("full text saved")
+	}
+	found, _, err := st.ListArticles(Selection{UserID: uid, Kind: "all", Search: "pellicano"}, ListOptions{Limit: 10})
+	if err != nil || len(found) != 1 || found[0].ID != p[0].ID {
+		t.Fatalf("the search finds words of the full text: %v %v", found, err)
+	}
+	found, _, _ = st.ListArticles(Selection{UserID: uid, Kind: "all", Search: "A"}, ListOptions{Limit: 10})
+	if len(found) != 1 {
+		t.Fatalf("and still the title: %d", len(found))
 	}
 	if p, _ := st.PendingFullTexts(0, 10); len(p) != 0 {
 		t.Fatal("done articles leave the queue")

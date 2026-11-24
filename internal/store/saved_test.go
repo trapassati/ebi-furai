@@ -35,6 +35,15 @@ func TestSavedPages(t *testing.T) {
 		t.Fatalf("saved feed %q %q", title, url)
 	}
 
+	var savedID int64
+	conn.QueryRow(`SELECT id FROM feeds WHERE user_id = ? AND kind = 'saved'`, uid).Scan(&savedID)
+	if err := st.DeleteFeed(uid, savedID); err != ErrNotFound {
+		t.Fatalf("deleting Read later: %v", err)
+	}
+	if l, _, _ := st.ListArticles(Selection{UserID: uid, Kind: "saved"}, ListOptions{Limit: 50}); len(l) != 1 {
+		t.Fatal("the saved page is gone")
+	}
+
 	src, err := st.Sources(uid, 0)
 	if err != nil {
 		t.Fatal(err)

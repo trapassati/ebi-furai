@@ -24,6 +24,7 @@ import (
 	"github.com/trapassati/ebi-furai/internal/config"
 	"github.com/trapassati/ebi-furai/internal/content"
 	"github.com/trapassati/ebi-furai/internal/filter"
+	"github.com/trapassati/ebi-furai/internal/i18n"
 	"github.com/trapassati/ebi-furai/internal/netsafe"
 	"github.com/trapassati/ebi-furai/internal/store"
 	"github.com/trapassati/ebi-furai/internal/websub"
@@ -229,7 +230,7 @@ type httpError struct {
 func (e *httpError) Error() string {
 	switch e.status {
 	case http.StatusUnauthorized:
-		return "HTTP 401: a username and password are needed (feed menu → Sign-in)"
+		return "HTTP 401: a username and password are needed (feed menu → Sign-in with password…)"
 	case http.StatusForbidden:
 		return "HTTP 403: access denied"
 	}
@@ -254,7 +255,7 @@ func (f *Fetcher) FetchFeed(ctx context.Context, feed *store.FetchFeed) error {
 		if he, ok := errors.AsType[*httpError](err); ok {
 			retry = he.retryAfter
 		}
-		f.store.FeedFailed(feed.ID, friendlyError(err), f.backoff(feed, feed.ErrorCount+1, retry))
+		f.store.FeedFailed(feed.ID, friendlyError(err, feed.AuthUser != ""), f.backoff(feed, feed.ErrorCount+1, retry))
 		return err
 	}
 	if !feed.HasIcon && time.Since(time.Unix(feed.IconCheckedAt, 0)) > iconRecheck {
@@ -318,11 +319,20 @@ func (f *Fetcher) fetchFeed(ctx context.Context, feed *store.FetchFeed) error {
 		return err
 	}
 	items := make([]store.NewArticle, 0, len(parsed.Items))
+	lang := ""
 	for _, it := range parsed.Items {
 		if h := quickGUIDHash(it, feedBase, siteURL); h != "" && known[h] {
 			continue
 		}
 		if a, ok := buildArticle(it, feedBase, siteURL, cutoff); ok {
+			if a.Title == untitled {
+				// Stored in the language of the person who follows the
+				// feed: it is shown as is, in the app and in Reeder.
+				if lang == "" {
+					lang = f.store.UserLang(feed.UserID)
+				}
+				a.Title = i18n.T(lang, untitled)
+			}
 			a.HiddenBy, a.Read = filter.Decide(rules, feed.ID, feed.FolderID, a.Title, a.Text)
 			items = append(items, a)
 		}
@@ -383,6 +393,9 @@ func quickGUIDHash(it *gofeed.Item, feedBase *url.URL, siteURL string) string {
 	return ""
 }
 
+// untitled is the title of an article that has none, nor any text.
+const untitled = "(untitled)"
+
 func buildArticle(it *gofeed.Item, feedBase *url.URL, siteURL string, cutoff int64) (store.NewArticle, bool) {
 	link, base := itemLink(it, feedBase, siteURL)
 
@@ -415,7 +428,7 @@ func buildArticle(it *gofeed.Item, feedBase *url.URL, siteURL string, cutoff int
 		title = content.Truncate(text, 90)
 	}
 	if title == "" {
-		title = "(untitled)"
+		title = untitled
 	}
 
 	guid := strings.TrimSpace(it.GUID)
@@ -508,12 +521,19 @@ func parseRetryAfter(v string) time.Duration {
 	return 0
 }
 
-func friendlyError(err error) string {
+// friendlyError is the message shown for a feed that failed; withAuth: a
+// username and password are set for it.
+func friendlyError(err error, withAuth bool) string {
 	var he *httpError
 	switch {
 	case errors.As(err, &he):
 		switch he.status {
-		case 401, 403:
+		case 401:
+			if withAuth {
+				return "username or password not accepted (HTTP 401): check them in the feed menu → Sign-in with password…"
+			}
+			return "the site asks for a username and password (HTTP 401): set them in the feed menu → Sign-in with password…"
+		case 403:
 			return fmt.Sprintf("access denied (HTTP %d)", he.status)
 		case 404, 410:
 			return fmt.Sprintf("feed not found (HTTP %d)", he.status)

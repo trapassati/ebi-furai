@@ -2,6 +2,7 @@ package feeds
 
 import (
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/mmcdole/gofeed"
@@ -31,5 +32,18 @@ func TestQuickGUIDHashMatchesBuild(t *testing.T) {
 		if q != a.GUIDHash {
 			t.Errorf("%s: quick %s != built %s", it.Title, q, a.GUIDHash)
 		}
+	}
+}
+
+func TestFriendlyError401(t *testing.T) {
+	err := &httpError{status: 401}
+	if m := friendlyError(err, false); !strings.Contains(m, "asks for a username and password") || !strings.Contains(m, "Sign-in with password") {
+		t.Errorf("without sign-in: %q", m)
+	}
+	if m := friendlyError(err, true); !strings.Contains(m, "not accepted") {
+		t.Errorf("with sign-in: %q", m)
+	}
+	if m := friendlyError(&httpError{status: 403}, false); m != "access denied (HTTP 403)" {
+		t.Errorf("403: %q", m)
 	}
 }

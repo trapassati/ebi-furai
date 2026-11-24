@@ -325,8 +325,37 @@ func (s *Store) SetStarred(userID, id int64, starred bool) error {
 }
 
 // SetFullContent stores the full text and its words (the reading time
-// follows the longer text).
-func (s *Store) SetFullContent(userID, id int64, html string, words int) error {
-	return execOne(s.DB, `UPDATE articles SET full_content = ?, full_tried = 1, words = MAX(COALESCE(words, 0), ?)
-		WHERE id = ? AND user_id = ?`, html, words, id, userID)
+// follows the longer text); text, its plain text, goes into the search
+// index in place of the feed's.
+func (s *Store) SetFullContent(userID, id int64, html, text string, words int) error {
+	tx, err := s.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err := execOne(tx, `UPDATE articles SET full_content = ?, full_tried = 1, words = MAX(COALESCE(words, 0), ?)
+		WHERE id = ? AND user_id = ?`, html, words, id, userID); err != nil {
+		return err
+	}
+	if err := indexFullText(tx, id, text); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// indexFullText makes the search find words of the full text, which is
+// usually much longer than the feed's summary.
+func indexFullText(tx *sql.Tx, id int64, text string) error {
+	if strings.TrimSpace(text) == "" {
+		return nil
+	}
+	var title string
+	if err := tx.QueryRow(`SELECT title FROM articles WHERE id = ?`, id).Scan(&title); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM articles_fts WHERE rowid = ?`, id); err != nil {
+		return err
+	}
+	_, err := tx.Exec(`INSERT INTO articles_fts(rowid, title, body) VALUES(?, ?, ?)`, id, title, text)
+	return err
 }

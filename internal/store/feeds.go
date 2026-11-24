@@ -316,8 +316,11 @@ func (s *Store) SetFeedURL(userID, id int64, url string) error {
 	return err
 }
 
+// DeleteFeed removes a feed and its articles. "Read later" is not a feed
+// one unsubscribes from (Reeder offers it like any other, and removing it
+// would delete every saved page): it is left alone, as if not found.
 func (s *Store) DeleteFeed(userID, id int64) error {
-	if err := execOne(s.DB, `DELETE FROM feeds WHERE id = ? AND user_id = ?`, id, userID); err != nil {
+	if err := execOne(s.DB, `DELETE FROM feeds WHERE id = ? AND user_id = ? AND kind <> 'saved'`, id, userID); err != nil {
 		return err
 	}
 	return s.releaseOrphanDuplicates()
