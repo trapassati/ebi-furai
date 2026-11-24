@@ -2,6 +2,11 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.7.3
+
+- **"You've read everything" shows the cards of the login page**, floating the same way, in place of the koi:
+  as big as the round picture of the reader column next to it, and centred on the same line.
+
 ## 1.7.2
 
 - **No more "Add as a preferred source on Google" badges** at the end of articles (9to5Mac and other news sites),

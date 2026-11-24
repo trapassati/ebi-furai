@@ -805,8 +805,12 @@
   .legal-text > .legal-head:first-child { margin-top: calc(8px * var(--ui)); text-align: center; }
   .empty-figure { height: calc(136px * var(--ui)); margin-bottom: calc(20px * var(--ui)); display: flex; align-items: center; justify-content: center; }
   .empty-figure .empty-art { margin: 0; }
-  .empty-koi { display: block; width: calc(136px * var(--ui)); height: calc(136px * var(--ui)); will-change: transform; pointer-events: none; }
-  @media (max-height: 520px) { .empty-figure { height: calc(84px * var(--ui)); margin-bottom: calc(12px * var(--ui)); } .empty-koi { width: calc(84px * var(--ui)); height: calc(84px * var(--ui)); } }
+  /* The login cards (210px high at full size), scaled to the height of the
+     round pictures of the other empty states (.empty-art), and centred on
+     the same line. */
+  .empty-figure .empty-papers { flex: none; margin: 0; transform: scale(calc(76 / 210)); pointer-events: none; }
+  .desk .empty-figure .empty-papers { transform: scale(calc(64 / 210)); }
+  @media (max-height: 520px) { .empty-figure { height: calc(84px * var(--ui)); margin-bottom: calc(12px * var(--ui)); } }
 
   .offline-dot { width: calc(8px * var(--ui)); height: calc(8px * var(--ui)); border-radius: 9999px; background: var(--c-star); box-shadow: 0 0 0 calc(3px * var(--ui)) rgb(255 159 26 / 0.25); flex: none; }
   .noselect { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }

@@ -105,6 +105,17 @@ export function centerEmpty(scroller, el) {
   el.style.paddingTop = `${Math.round(top - r.top)}px`;
 }
 
+// paperArt is the original illustration of the login page: three article
+// cards, which float (motion.float). Also the picture of "You've read
+// everything". (Classes only: the CSP forbids inline style attributes.)
+export function paperArt(extra = '') {
+  const paper = (cls, dot) => h('div', { class: 'paper ' + cls },
+    h('div', { class: 'flex items-center gap-2' }, h('span', { class: 'dot ' + dot }), h('i', { class: 't' })),
+    h('i'), h('i', { class: 'w-4/5' }), h('i', { class: 'w-[55%]' }));
+  return h('div', { class: ('welcome-art ' + extra).trim(), 'aria-hidden': 'true' },
+    paper('p1', 'bg-[var(--k-purple)]'), paper('p2', 'bg-[var(--k-orange)]'), paper('p3', 'bg-[var(--k-blue)]'));
+}
+
 // emptyBlock builds an empty state: the picture sits in a box of fixed
 // height, so every empty state has its title at the same place.
 export function emptyBlock(picture, title, hint) {
