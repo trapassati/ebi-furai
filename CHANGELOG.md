@@ -2,6 +2,11 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+- **No more "Add as a preferred source on Google" badges** at the end of articles (9to5Mac and other news sites),
+  also in articles already downloaded, with or without the ad filter.
+
 ## 1.7.1
 
 - **Search finds words of the full text**: when an article's full text is downloaded (by hand or by the feed's

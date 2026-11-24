@@ -80,6 +80,12 @@ func (s *ImageSigner) Rewrite(raw string) string {
 					dupes = append(dupes, n)
 					return
 				}
+				// Badges like "Add as a preferred source on Google" go too,
+				// also from articles stored before this rule.
+				if (n.DataAtom == atom.A && clutter(target, "")) || (n.DataAtom == atom.Img && clutter("", target)) {
+					dupes = append(dupes, n)
+					return
+				}
 			}
 			switch n.DataAtom {
 			case atom.Img:
