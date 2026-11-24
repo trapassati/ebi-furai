@@ -29,6 +29,7 @@ type FeedInfo struct {
 	AuthUser      string `json:"auth_user,omitempty"` // the password is never returned
 	FullText      bool   `json:"full_text"`           // download the full text of new articles
 	OpenWeb       bool   `json:"open_web"`            // open articles on the site
+	Instant       bool   `json:"instant"`             // new articles arrive through WebSub
 }
 
 type FolderInfo struct {
@@ -99,8 +100,8 @@ func (s *Store) Sources(userID, todayStart int64) (*Sources, error) {
 	rows.Close()
 
 	rows, err = s.DB.Query(`SELECT id, folder_id, title, custom_title, url, site_url, icon IS NOT NULL,
-		error_count, last_error, last_fetched_at, last_ok_at, auth_user, full_text, open_web
-		FROM feeds WHERE user_id = ? AND kind = 'feed'`, userID)
+		error_count, last_error, last_fetched_at, last_ok_at, auth_user, full_text, open_web,
+		`+instantCol+` FROM feeds WHERE user_id = ? AND kind = 'feed'`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +111,7 @@ func (s *Store) Sources(userID, todayStart int64) (*Sources, error) {
 		f := &FeedInfo{}
 		var folder sql.NullInt64
 		if err := rows.Scan(&f.ID, &folder, &f.OriginalTitle, &f.CustomTitle, &f.URL, &f.SiteURL, &f.HasIcon,
-			&f.ErrorCount, &f.LastError, &f.LastFetchedAt, &f.LastOKAt, &f.AuthUser, &f.FullText, &f.OpenWeb); err != nil {
+			&f.ErrorCount, &f.LastError, &f.LastFetchedAt, &f.LastOKAt, &f.AuthUser, &f.FullText, &f.OpenWeb, &f.Instant); err != nil {
 			return nil, err
 		}
 		if folder.Valid {

@@ -26,6 +26,7 @@ import (
 	"github.com/trapassati/ebi-furai/internal/filter"
 	"github.com/trapassati/ebi-furai/internal/netsafe"
 	"github.com/trapassati/ebi-furai/internal/store"
+	"github.com/trapassati/ebi-furai/internal/websub"
 )
 
 const (
@@ -33,6 +34,9 @@ const (
 	maxBackoff   = 24 * time.Hour
 	iconRecheck  = 7 * 24 * time.Hour
 	fetchTimeout = 30 * time.Second
+	// instantPoll: a feed whose hub sends WebSub notifications is still
+	// fetched now and then, in case a notification gets lost.
+	instantPoll = 3 * time.Hour
 )
 
 type Fetcher struct {
@@ -41,7 +45,8 @@ type Fetcher struct {
 	client   *http.Client
 	inflight sync.Map // feed id -> struct{}
 	wake     chan struct{}
-	fullWake chan struct{} // new articles wait for their full text
+	fullWake chan struct{}   // new articles wait for their full text
+	websub   *websub.Manager // nil without PUBLIC_URL
 }
 
 func New(st *store.Store, cfg *config.Config) *Fetcher {
@@ -53,6 +58,10 @@ func New(st *store.Store, cfg *config.Config) *Fetcher {
 		fullWake: make(chan struct{}, 1),
 	}
 }
+
+// SetWebSub turns on instant updates: the hubs that feeds name are noted
+// after each download.
+func (f *Fetcher) SetWebSub(m *websub.Manager) { f.websub = m }
 
 // Client exposes the SSRF-safe HTTP client (used for pages and images).
 func (f *Fetcher) Client() *http.Client { return f.client }
@@ -191,6 +200,9 @@ func (f *Fetcher) Interval(minutes int) time.Duration {
 
 func (f *Fetcher) nextFetch(feed *store.FetchFeed) int64 {
 	d := f.Interval(feed.RefreshMinutes)
+	if feed.Instant {
+		d = max(d, instantPoll)
+	}
 	jitter := time.Duration(rand.Int64N(int64(d / 10)))
 	return time.Now().Add(d + jitter).Unix()
 }
@@ -321,6 +333,9 @@ func (f *Fetcher) fetchFeed(ctx context.Context, feed *store.FetchFeed) error {
 	}
 	if added > 0 && feed.FullText {
 		f.WakeFullText()
+	}
+	if f.websub != nil && feed.AuthUser == "" {
+		f.websub.Seen(feed.URL, resp.Header, body, feedBase)
 	}
 	title := strings.TrimSpace(content.PlainText(parsed.Title))
 	if siteURL != "" {

@@ -27,6 +27,7 @@ import (
 	"github.com/trapassati/ebi-furai/internal/push"
 	"github.com/trapassati/ebi-furai/internal/store"
 	"github.com/trapassati/ebi-furai/internal/update"
+	"github.com/trapassati/ebi-furai/internal/websub"
 	"github.com/trapassati/ebi-furai/web"
 )
 
@@ -133,6 +134,12 @@ func run() error {
 	bg.Go(func() { pushSvc.Run(ctx) })
 
 	fetcher := feeds.New(st, cfg)
+	var instant *websub.Manager
+	if cfg.PublicURL != "" {
+		instant = websub.New(st, cfg.PublicURL, fetcher.Wake)
+		fetcher.SetWebSub(instant)
+		bg.Go(func() { instant.Run(ctx) })
+	}
 	fetchDone := make(chan struct{})
 	go func() {
 		fetcher.Run(ctx)
@@ -140,6 +147,7 @@ func run() error {
 	}()
 
 	apiSrv := api.New(cfg, st, fetcher, images, static, pushSvc, ads, &adOn)
+	apiSrv.SetWebSub(instant)
 	if setupCode != "" {
 		apiSrv.SetSetupCode(setupCode)
 		slog.Warn("no users yet: open the app in a browser and create the administrator with this setup code",

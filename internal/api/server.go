@@ -30,6 +30,7 @@ import (
 	"github.com/trapassati/ebi-furai/internal/push"
 	"github.com/trapassati/ebi-furai/internal/store"
 	"github.com/trapassati/ebi-furai/internal/update"
+	"github.com/trapassati/ebi-furai/internal/websub"
 )
 
 const (
@@ -59,6 +60,7 @@ type Server struct {
 	tickets    ticketStore     // logins waiting for the two-step code
 	apiTouched apiTouch        // when app passwords were last marked as used
 	updates    *update.Checker // nil when UPDATE_CHECK=false
+	websub     *websub.Manager // nil without PUBLIC_URL
 }
 
 func New(cfg *config.Config, st *store.Store, f *feeds.Fetcher, images *content.ImageSigner, static *Static, ps *push.Service,
@@ -88,6 +90,9 @@ func (s *Server) Routes() http.Handler {
 	r.Use(securityHeaders)
 
 	r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("ok")) })
+
+	// WebSub hubs, without sign-in: see internal/websub.
+	r.With(noStore).HandleFunc("/websub/{token}", s.handleWebSub)
 
 	// The Google Reader API, for apps like Reeder and NetNewsWire.
 	r.Group(func(r chi.Router) {
