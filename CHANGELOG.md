@@ -2,7 +2,7 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 1.7.1
 
 - **Search finds words of the full text**: when an article's full text is downloaded (by hand or by the feed's
   option), the search looks into it, not only into the feed's summary.
