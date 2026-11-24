@@ -33,7 +33,7 @@ def call(method, path, body=None, headers=None):
 
 
 def instant_shown(browser):
-    fid, url = feed("Blog di tecnologia")
+    fid, url = feed("Ricette")
     subscribe(url)
     pg = login(context(browser, DESKTOP))
     pg.click(f".feed-row[data-key='feed:{fid}']", button="right")
@@ -42,7 +42,7 @@ def instant_shown(browser):
     check(pg.locator(".sheet [data-instant]").count() == 1, "the feed settings say updates are instant")
     pg.click(".sheet button:has-text('Fine')")
     pg.wait_for_timeout(800)
-    other, _ = feed("Ricette")
+    other, _ = feed("Notizie del giorno")
     pg.click(f".feed-row[data-key='feed:{other}']", button="right")
     pg.click("text=Impostazioni del feed…")
     pg.wait_for_selector("text=Scarica sempre il testo completo")
