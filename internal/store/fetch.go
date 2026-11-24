@@ -26,17 +26,22 @@ type FetchFeed struct {
 	FullText       bool   // download the full text of new articles
 	AuthUser       string // HTTP Basic credentials, empty when none
 	AuthPass       string
+	Instant        bool // a WebSub hub tells the server when the feed changes
 	authSecret     []byte
 }
 
+// instantCol tells whether a hub confirmed a WebSub subscription for the
+// feed's address that has not expired yet.
+const instantCol = `EXISTS (SELECT 1 FROM websub w WHERE w.feed_url = feeds.url AND w.verified_until > unixepoch())`
+
 const fetchCols = `id, user_id, url, site_url, title, etag, last_modified, error_count, icon IS NOT NULL, icon_checked_at, last_fetched_at, auth_user, auth_secret,
-	(SELECT u.refresh_minutes FROM users u WHERE u.id = feeds.user_id), COALESCE(folder_id, 0), full_text`
+	(SELECT u.refresh_minutes FROM users u WHERE u.id = feeds.user_id), COALESCE(folder_id, 0), full_text, ` + instantCol
 
 func scanFetch(sc interface{ Scan(...any) error }) (*FetchFeed, error) {
 	f := &FetchFeed{}
 	err := sc.Scan(&f.ID, &f.UserID, &f.URL, &f.SiteURL, &f.Title, &f.ETag, &f.LastModified, &f.ErrorCount,
 		&f.HasIcon, &f.IconCheckedAt, &f.LastFetchedAt, &f.AuthUser, &f.authSecret, &f.RefreshMinutes,
-		&f.FolderID, &f.FullText)
+		&f.FolderID, &f.FullText, &f.Instant)
 	return f, err
 }
 

@@ -40,6 +40,7 @@ def reset():
         c.execute("UPDATE articles SET hidden_by = NULL, full_content = '', full_tried = 1, dup_of = NULL, words = 0")
         c.execute("UPDATE users SET dedup = 1")
         c.execute("UPDATE feeds SET full_text = 0, open_web = 0, custom_title = ''")
+        c.execute("DELETE FROM websub")
 
 
 def unread():

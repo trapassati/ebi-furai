@@ -1,11 +1,12 @@
 // "Impostazioni del feed": name, full text, open on the site and the
-// filters of one feed. The switches save at once; the name when the sheet
+// filters of one feed, and whether its site sends instant updates. The switches save at once; the name when the sheet
 // closes.
 
 import { t } from '../i18n.js';
 import { patch } from '../api.js';
 import { feedIcon, h, icon, openSheet, showError, tile, toast, toggleSwitch } from '../ui.js';
 import { sourcesChanged } from './sources.js';
+import * as motion from '../motion.js';
 import { openFilters, filtersFor } from './filters.js';
 
 function switchRow(label, hint, sw) {
@@ -44,6 +45,18 @@ export function openFeedSettings(feed) {
   };
   paintFilters();
 
+  // Instant updates (WebSub): the site's hub tells the server as soon as it
+  // publishes. Shown only where it is on; nothing to set.
+  const bolt = feed.instant ? tile('o-bolt', 'sunset', 'sm') : null;
+  const instant = feed.instant ? [
+    h('div', { class: 'group-label', text: t('Updates') }),
+    h('div', { class: 'group flex items-center gap-3 px-3 py-2.5', 'data-instant': '' },
+      bolt,
+      h('div', { class: 'min-w-0' },
+        h('div', { class: 'text-[1rem]', text: t('Instant updates') }),
+        h('div', { class: 'text-[0.8125rem] text-muted', text: t('The site tells the server as soon as it publishes: new articles arrive within seconds.') }))),
+  ] : [];
+
   const body = h('div', { class: 'min-h-full' },
     h('div', { class: 'flex items-center px-2 h-14 sticky top-0 bg-bg z-10' },
       h('div', { class: 'w-20' }),
@@ -66,11 +79,14 @@ export function openFeedSettings(feed) {
         switchRow(t('Always open on the site'),
           t('Tapping an article opens the site\'s page instead of the reader. Useful for sites that don\'t read well here.'),
           option('open_web', feed.open_web))),
+      ...instant,
       h('div', { class: 'group-label', text: t('Filters') }),
       h('div', { class: 'group' },
         h('button', { class: 'row-btn px-3 py-2 text-[1.0625rem]', onclick: () => openFilters({ feed, onChange: paintFilters }) },
           tile('o-funnel', 'indigo', 'sm'), filterLabel, icon('o-chevron-right', 'w-4 h-4 text-faint'))),
       h('div', { class: 'text-[0.8125rem] text-muted px-1 pt-2', text: t('Hide or mark as read the articles about something you don\'t care about.') })));
+
+  if (bolt) setTimeout(() => motion.pop(bolt), 250);
 
   ref.sheet = openSheet(body, {
     full: true, wide: true,

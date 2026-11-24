@@ -90,7 +90,7 @@ export function openAbout() {
 
     section('Privacy', h('div', { class: 'group px-4 py-4 flex flex-col gap-3' },
       para(t('All data (feeds, articles, accounts, preferences) stays on the server where Ebi Furai is installed. There are no statistics, no tracking and no third-party services.')),
-      para(t('The server only connects to the outside to download feeds and full articles, article images (which go through the server, so sites don\'t see your device), site icons and the ad filter lists. Notifications go through Apple\'s or the browser\'s push service.')))),
+      para(t('The server only connects to the outside to download feeds and full articles, article images (which go through the server, so sites don\'t see your device), site icons and the ad filter lists, and, when instant updates are on, to the hubs that announce new articles. Notifications go through Apple\'s or the browser\'s push service.')))),
 
     h('p', { class: 'text-center text-[0.8125rem] text-muted pt-8', text: '© 2026 Fartingloud' }));
 

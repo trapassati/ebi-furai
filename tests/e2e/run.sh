@@ -25,7 +25,8 @@ if [[ -z "$bin" ]]; then
 fi
 
 export DATA_DIR="$tmp/data" ADMIN_USER=admin ADMIN_PASSWORD=e2e-password-123 COOKIE_SECURE=false \
-  TRUST_CF_HEADER=false LISTEN_ADDR="127.0.0.1:$port" BACKUPS=true UPDATE_CHECK=false
+  TRUST_CF_HEADER=false LISTEN_ADDR="127.0.0.1:$port" BACKUPS=true UPDATE_CHECK=false \
+  PUBLIC_URL="http://127.0.0.1:$port"
 mkdir -p "$DATA_DIR"
 "$bin" >"$tmp/server.log" 2>&1 &
 pid=$!
