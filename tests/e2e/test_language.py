@@ -22,6 +22,8 @@ def english_device(browser):
 def switch_language(browser):
     pg = login(context(browser))  # Italian device
     pg.click("button[aria-label=Impostazioni]")
+    pg.wait_for_timeout(700)
+    settings_page(pg, "appearance")
     pg.wait_for_selector(".sheet button[data-v=en]")
     pg.click(".sheet button[data-v=en]")
     pg.wait_for_selector(".deck-card")

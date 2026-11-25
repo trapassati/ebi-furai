@@ -62,7 +62,7 @@ def desktop_layout(browser):
     pg.click("button[aria-label=Impostazioni]")
     pg.wait_for_selector(".settings-nav-item")
     check(pg.locator(".settings-page .settings-section").count() == 1, "the settings show one section at a time")
-    pg.click(".settings-nav-item:has-text('Account')")
+    settings_page(pg, "account")
     check(pg.locator(".settings-page :text('Cambia password')").count() == 1, "picking a section shows it")
     # A window opened from the settings takes their place, header included.
     pg.click(".settings-nav-item:has-text('Informazioni')")

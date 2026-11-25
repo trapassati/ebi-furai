@@ -30,6 +30,7 @@ def sync_with_an_app(browser):
     pg = login(context(browser))
     pg.click("button[aria-label=Impostazioni]")
     pg.wait_for_timeout(700)
+    settings_page(pg, "apps")
     pg.click("text=Reeder e altre app")
     pg.wait_for_selector("text=Ancora nessuna password per le app.")
     check(pg.locator(f"text={URL}/api/greader.php").count() == 1, "the address to type in the app is shown")
@@ -89,6 +90,7 @@ def sync_with_an_app(browser):
     # Revoking the app password signs the app out.
     pg.click("button[aria-label=Impostazioni]")
     pg.wait_for_timeout(700)
+    settings_page(pg, "apps")
     pg.click("text=Reeder e altre app")
     row = pg.locator(".sheet .app-pass:has-text('Reeder test')")
     row.wait_for()
@@ -122,6 +124,7 @@ def update_notice(browser):
     pg.wait_for_timeout(500)
     pg.click("button[aria-label=Impostazioni]")
     pg.wait_for_timeout(700)
+    settings_page(pg, "about")
     check(pg.locator("text=Aggiornamento disponibile: 9.0.0").count() == 1, "and in Settings")
     pg.keyboard.press("Escape")
     pg.reload()

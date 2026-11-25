@@ -145,7 +145,7 @@ The app shows these steps itself the first time it's opened in Safari.
 Ebi Furai speaks the Google Reader API, the one of FreshRSS, so native apps can show your feeds and keep read and
 starred articles in sync with the web app: Reeder, NetNewsWire, ReadKit, FeedMe, Fluent Reader and others.
 
-1. In Ebi Furai: Settings → **Reeder and other apps** → New app password. Each app gets its own password, which
+1. In Ebi Furai: Settings → Apps and integrations → **Reeder and other apps** → New app password. Each app gets its own password, which
    works with two-step verification on and can be revoked without touching the others.
 2. In the app, add a **FreshRSS** account (or "Google Reader API") with:
    - server: `https://YOUR-ADDRESS/api/greader.php`
@@ -158,7 +158,7 @@ pictures straight from the sites, not through the image proxy.
 ## Read later
 
 Pages saved for later end up in the **Read later** collection, with their text extracted and ready to read,
-offline too; once read they leave it like any article. Settings → **Save for later** has the bookmarklet for the
+offline too; once read they leave it like any article. Settings → Apps and integrations → **Save for later** has the bookmarklet for the
 browser and the steps for the iPhone. The Shortcut does a single request, which any other tool can do too:
 
 ```

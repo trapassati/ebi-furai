@@ -24,3 +24,12 @@ export function rowButton(iconName, tone, label, onclick, cls = '') {
   return h('button', { class: 'row-btn px-3 py-2 text-[1.0625rem] ' + cls, onclick },
     tile(iconName, tone, 'sm'), h('span', { class: 'flex-1', text: label }), icon('o-chevron-right', 'w-4 h-4 text-faint'));
 }
+
+// A row of the list of sections: it opens the page of a section.
+// detail is a short value shown before the chevron (a count, a state).
+export function pageRow(page, onclick) {
+  return h('button', { class: 'row-btn px-3 py-2 text-[1.0625rem] settings-row', dataset: { page: page.id }, onclick },
+    tile(page.icon, page.tone, 'sm'), h('span', { class: 'flex-1 truncate', text: page.label }),
+    page.detail ? h('span', { class: 'text-[0.9375rem] text-muted tabular-nums', text: page.detail }) : null,
+    icon('o-chevron-right', 'w-4 h-4 text-faint'));
+}

@@ -80,8 +80,7 @@ def remove_saved(browser):
     # Read later stays in the help, and in the settings.
     pg.click("button[aria-label=Impostazioni]")
     pg.wait_for_timeout(600)
-    pg.click(".settings-nav :text('Account')")
-    pg.wait_for_timeout(400)
+    settings_page(pg, "apps")
     pg.click(".sheet .row-btn:has-text('Salva per dopo')")
     pg.wait_for_selector(".bookmarklet")
     href = pg.get_attribute(".bookmarklet", "href")
