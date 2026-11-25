@@ -15,6 +15,7 @@ def two_step_verification(browser):
     pg = login(context(browser))
     pg.click("button[aria-label=Impostazioni]")
     pg.wait_for_timeout(700)
+    settings_page(pg, "account")
     pg.click("text=Verifica in due passaggi")
     pg.fill(".sheet form input[type=password]", ADMIN[1])
     pg.click(".sheet button:has-text('Continua')")
@@ -68,6 +69,7 @@ def backups(browser):
     pg = login(context(browser, accept_downloads=True))
     pg.click("button[aria-label=Impostazioni]")
     pg.wait_for_timeout(700)
+    settings_page(pg, "backup")
     pg.click("text=Crea un backup ora")
     link = pg.locator("a[href^='/api/admin/backups/']").first
     link.wait_for()
@@ -86,6 +88,7 @@ def delete_backup_and_webdav(browser):
     pg = login(context(browser))
     pg.click("button[aria-label=Impostazioni]")
     pg.wait_for_timeout(700)
+    settings_page(pg, "backup")
     pg.click("text=Crea un backup ora")
     pg.wait_for_timeout(900)
     st = pg.evaluate("fetch('/api/admin/backups').then(r=>r.json())")
@@ -117,6 +120,7 @@ def restore(browser):
     pg = login(context(browser))
     pg.click("button[aria-label=Impostazioni]")
     pg.wait_for_timeout(700)
+    settings_page(pg, "backup")
     pg.click("text=Crea un backup ora")
     pg.wait_for_timeout(800)
     # A file that is not a backup is refused, and nothing changes.

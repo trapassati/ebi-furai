@@ -63,28 +63,6 @@ export function appearanceControls({ reading = false } = {}) {
   const language = labelled(t('Language'),
     segmented([['auto', t('Automatic|f')], ['it', 'Italiano'], ['en', 'English']], langPref(), (v) => { setLang(v); location.reload(); }));
 
-  // Sound effects, with their volume (shown only when they are on).
-  const soundSw = toggleSwitch(p.sounds === true);
-  const volNow = String(sounds.VOLUMES.reduce((a, [x]) => (Math.abs(x - p.sound_volume) < Math.abs(a - p.sound_volume) ? x : a), 60));
-  const soundVol = h('div', { class: 'sound-volume flex flex-col gap-1.5 pb-3' },
-    h('div', { class: 'text-[0.8125rem] text-muted', text: t('Volume') }),
-    segmented(sounds.VOLUMES.map(([v, l]) => [String(v), l]), volNow, (v) => {
-      setPref('sound_volume', Number(v));
-      sounds.play('star');
-    }));
-  soundVol.classList.toggle('hidden', p.sounds !== true);
-  soundSw.addEventListener('change', () => {
-    setPref('sounds', soundSw.checked);
-    soundVol.classList.toggle('hidden', !soundSw.checked);
-    if (soundSw.checked) sounds.play('refresh');
-  });
-  const soundBox = h('div', { class: 'group px-4' },
-    h('div', { class: 'switch-row' },
-      h('div', {}, h('div', { class: 'text-[1rem]', text: t('Sound effects') }),
-        h('div', { class: 'text-[0.8125rem] text-muted', text: t('Soft sounds for new articles, stars and articles marked as read. On the iPhone the silent switch mutes them.') })),
-      soundSw),
-    soundVol);
-
   const theme = segmented([['auto', t('Automatic')], ['light', t('Light')], ['dark', t('Dark')]], p.theme, (v) => setPref('theme', v));
   const size = h('div', { class: 'size-box bg-raise rounded-[calc(20px*var(--ui))] shadow-[var(--shadow-card)] flex items-center justify-between px-2 py-2' },
       h('button', { class: 'btn btn-plain !min-h-11 !px-5 text-[0.9375rem]', 'aria-label': t('Smaller text'), onclick: () => changeSize(-1), text: 'A−' }),
@@ -101,13 +79,37 @@ export function appearanceControls({ reading = false } = {}) {
     size,
     lineHeight,
     listSize,
-    soundBox,
     touch ? h('div', { class: 'group px-4' },
       h('div', { class: 'switch-row' },
         h('div', {}, h('div', { class: 'text-[1rem]', text: t('Side-by-side pages') }),
           h('div', { class: 'text-[0.8125rem] text-muted', text: t('On an open iPhone Duo, full width: two columns like a book') })),
         book)) : null,
     uiSize);
+}
+
+// Sound effects, with their volume (shown only when they are on).
+export function soundControls() {
+  const p = getPrefs();
+  const soundSw = toggleSwitch(p.sounds === true);
+  const volNow = String(sounds.VOLUMES.reduce((a, [x]) => (Math.abs(x - p.sound_volume) < Math.abs(a - p.sound_volume) ? x : a), 60));
+  const soundVol = h('div', { class: 'sound-volume flex flex-col gap-1.5 pb-3' },
+    h('div', { class: 'text-[0.8125rem] text-muted', text: t('Volume') }),
+    segmented(sounds.VOLUMES.map(([v, l]) => [String(v), l]), volNow, (v) => {
+      setPref('sound_volume', Number(v));
+      sounds.play('star');
+    }));
+  soundVol.classList.toggle('hidden', p.sounds !== true);
+  soundSw.addEventListener('change', () => {
+    setPref('sounds', soundSw.checked);
+    soundVol.classList.toggle('hidden', !soundSw.checked);
+    if (soundSw.checked) sounds.play('refresh');
+  });
+  return h('div', { class: 'group px-4' },
+    h('div', { class: 'switch-row' },
+      h('div', {}, h('div', { class: 'text-[1rem]', text: t('Sound effects') }),
+        h('div', { class: 'text-[0.8125rem] text-muted', text: t('Soft sounds for new articles, stars and articles marked as read. On the iPhone the silent switch mutes them.') })),
+      soundSw),
+    soundVol);
 }
 
 // The "Aa" window of the reader: only what changes the article, with a

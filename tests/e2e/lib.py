@@ -110,3 +110,10 @@ def run(*tests):
                 print("  FAILED")
         browser.close()
     sys.exit(1 if failed else 0)
+
+
+def settings_page(pg, page):
+    """Opens a page of the open Settings window: from the list on the left
+    (wide windows) or from the list that slides away (narrow ones)."""
+    pg.click(f".settings-nav-item[data-page={page}], .settings-list [data-page={page}]")
+    pg.wait_for_timeout(600)

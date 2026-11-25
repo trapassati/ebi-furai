@@ -92,5 +92,45 @@ def ipad_hide_first_column(browser):
     check(not pg.errors, "no page errors")
 
 
+def settings_pages(browser):
+    # iPhone: the list of sections, a page slides in, back or a swipe from
+    # the left edge returns to the list.
+    pg = login(context(browser, IPHONE))
+    pg.click("button[aria-label=Impostazioni]")
+    pg.wait_for_selector(".settings-list")
+    check(pg.locator(".settings-nav").count() == 0, "iPhone: a list, no column on the left")
+    settings_page(pg, "reading")
+    check(pg.inner_text(".settings-head .sheet-title") == "Lettura", "the page shows its name at the top")
+    check(pg.locator(".settings-pageview :text('Unisci i doppioni')").is_visible(), "and its settings")
+    pg.click(".settings-back")
+    pg.wait_for_timeout(600)
+    check(pg.locator(".settings-pageview").is_hidden(), "back returns to the list")
+    settings_page(pg, "feeds")
+    swipe = """(() => {
+      const el = document.querySelector('.settings-stack');
+      const touch = (x) => new Touch({ identifier: 1, target: el, clientX: x, clientY: 400 });
+      const fire = (type, x) => el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true,
+        touches: type === 'touchend' ? [] : [touch(x)], changedTouches: [touch(x)] }));
+      fire('touchstart', 6); for (let x = 20; x <= 300; x += 20) fire('touchmove', x); fire('touchend', 300);
+    })()"""
+    pg.evaluate(swipe)
+    pg.wait_for_timeout(700)
+    check(pg.locator(".settings-pageview").is_hidden(), "a swipe from the left edge returns to the list")
+    check(pg.inner_text(".settings-head .sheet-title") == "Impostazioni", "with its title")
+    check(not pg.errors, "no page errors")
+    # iPad: side by side when held sideways, the list when upright; the
+    # window keeps clear of the top and bottom of the screen.
+    pg = login(context(browser, IPAD))
+    pg.click("button[aria-label=Impostazioni]")
+    pg.wait_for_selector(".settings-nav")
+    check(pg.locator(".settings-page .settings-section").count() == 1, "iPad sideways: one page beside the list")
+    box = pg.locator(".settings-sheet").bounding_box()
+    check(box["y"] >= 16 and box["y"] + box["height"] <= 820 - 16, f"the window keeps a margin ({box['y']}, {box['height']})")
+    pg.set_viewport_size({"width": 820, "height": 1180})
+    pg.wait_for_selector(".settings-list")
+    check(pg.locator(".settings-nav").count() == 0, "upright: the list, like the iPhone")
+    check(not pg.errors, "no page errors")
+
+
 if __name__ == "__main__":
-    run(duo_rotations_keep_place, desktop_scale_and_keys, touch_devices_unscaled, ipad_hide_first_column)
+    run(duo_rotations_keep_place, desktop_scale_and_keys, touch_devices_unscaled, ipad_hide_first_column, settings_pages)

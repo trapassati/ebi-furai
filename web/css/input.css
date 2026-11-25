@@ -1107,26 +1107,61 @@ html.desk body {
 .desk .confirm-actions .btn { flex: 1; }
 .desk .toasts { bottom: calc(24px * var(--ui)); }
 
-/* settings window: a glass list of sections on the left */
-.desk .sheet.settings-sheet { width: min(calc(900px * var(--ui)), 94vw); height: min(calc(700px * var(--ui)), 90vh); overflow: hidden; padding: 0; }
-.settings-root { display: flex; flex-direction: column; height: 100%; }
-.desk .settings-head { flex: none; }
+/* settings window: the list of sections and the pages scroll inside it */
+.sheet.settings-sheet { overflow: hidden; display: flex; flex-direction: column; padding-bottom: 0; }
+.desk .sheet.settings-sheet { width: min(calc(900px * var(--ui)), 94vw); height: min(calc(700px * var(--ui)), 90vh); padding: 0; }
+.settings-root { display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; }
+.settings-head { flex: none; }
+/* back, title and Done: the title stays centered, the back label gives way */
+.settings-bar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, max-content) minmax(0, 1fr); align-items: center; gap: calc(4px * var(--ui)); }
+@media (max-width: 639.98px) { .sheet.full.settings-sheet { box-shadow: none; } }
+/* narrow: the list, and a page sliding in over it (iOS Settings) */
+.settings-stack { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.settings-view {
+  position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; background: var(--c-bg);
+  padding-bottom: calc(var(--safe-bottom) + calc(8px * var(--ui)));
+}
+.settings-pageview { box-shadow: calc(-12px * var(--ui)) 0 calc(32px * var(--ui)) calc(-8px * var(--ui)) rgb(11 16 32 / 0.28); }
+.settings-stack .settings-section > .group-label:first-child { display: none; }
+.settings-stack .settings-section { padding-top: calc(12px * var(--ui)); }
+.settings-me { gap: calc(12px * var(--ui)); }
+.settings-row .tabular-nums { color: var(--c-danger); font-weight: 600; }
+/* wide: the list on the left, one page on the right */
 .settings-split { flex: 1; min-height: 0; display: flex; }
 .settings-nav {
   width: calc(224px * var(--ui)); flex: none; display: flex; flex-direction: column; gap: calc(2px * var(--ui)); overflow-y: auto;
   margin: 0 0 calc(10px * var(--ui)) calc(10px * var(--ui)); padding: calc(8px * var(--ui));
-  border-radius: calc(18px * var(--ui)); background: var(--dk-well);
+  border-radius: calc(18px * var(--ui)); background: var(--dk-well, var(--c-raise));
 }
 .settings-nav > .text-center { padding: calc(10px * var(--ui)) 0 calc(2px * var(--ui)); }
 .settings-nav-item {
   display: flex; align-items: center; gap: calc(10px * var(--ui)); min-height: calc(34px * var(--ui)); padding: 0 calc(10px * var(--ui)) 0 calc(8px * var(--ui));
   border-radius: calc(11px * var(--ui)); font-size: 0.9375rem; font-weight: 500; color: var(--c-fg); text-align: left; transition: background-color 120ms;
+  flex: none;
 }
 .settings-nav-item:hover { background: var(--c-hover); }
-.settings-nav-item.on { background: var(--dk-pick); font-weight: 600; }
-.settings-page { flex: 1; min-width: 0; overflow-y: auto; padding: 0 calc(28px * var(--ui)) calc(28px * var(--ui)); }
+.settings-nav-item.on { background: var(--dk-pick, color-mix(in srgb, var(--c-accent) 20%, transparent)); font-weight: 600; }
+.settings-nav-label { font-size: 0.75rem; font-weight: 600; color: var(--c-muted); padding: calc(14px * var(--ui)) calc(10px * var(--ui)) calc(4px * var(--ui)); }
+.settings-nav-gap { flex: none; height: calc(10px * var(--ui)); }
+.settings-nav-badge {
+  min-width: calc(20px * var(--ui)); height: calc(20px * var(--ui)); padding: 0 calc(6px * var(--ui)); border-radius: calc(10px * var(--ui));
+  background: var(--c-danger); color: #fff; font-size: 0.75rem; font-weight: 700; line-height: calc(20px * var(--ui)); text-align: center;
+}
+.settings-page { flex: 1; min-width: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 calc(28px * var(--ui)) calc(28px * var(--ui)); }
 .settings-page .settings-section > .group-label:first-child { font-size: 1.25rem; font-weight: 700; padding-top: calc(8px * var(--ui)); }
 .desk .sheet .group > .row-btn, .desk .settings-page .group > .row-btn { font-size: 0.9375rem; padding-top: calc(6px * var(--ui)); padding-bottom: calc(6px * var(--ui)); min-height: calc(38px * var(--ui)); }
+/* iPad held sideways: the same, sized for a finger */
+html:not(.desk) .sheet.settings-sheet:has(.settings-root.wide) { width: min(calc(980px * var(--ui)), 94vw); }
+html:not(.desk) .settings-nav { width: calc(280px * var(--ui)); margin-bottom: calc(14px * var(--ui)); margin-left: calc(14px * var(--ui)); }
+html:not(.desk) .settings-nav-item { min-height: calc(46px * var(--ui)); font-size: 1.0625rem; border-radius: calc(13px * var(--ui)); }
+/* tablets: a full-height window stays clear of the status bar and the
+   floating controls at the top and bottom of the screen */
+@media (min-width: 640px) {
+  html:not(.desk) .sheet.full {
+    top: calc(var(--safe-top) + calc(16px * var(--ui))); bottom: calc(var(--safe-bottom) + calc(16px * var(--ui)));
+    height: min(calc(840px * var(--ui)), calc(100% - var(--safe-top) - var(--safe-bottom) - calc(32px * var(--ui))));
+  }
+}
 
 /* menus and tooltips (desk.js) */
 .tile.xs { width: calc(20px * var(--ui)); height: calc(20px * var(--ui)); }

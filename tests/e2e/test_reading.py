@@ -63,6 +63,7 @@ def preferences_per_device(browser):
     b = login(context(browser))
     a.click("button[aria-label=Impostazioni]")
     a.wait_for_timeout(700)
+    settings_page(a, "appearance")
     a.click("button[data-v='1.85']")
     a.click("button[data-v='1.25']")
     a.wait_for_timeout(300)
@@ -139,6 +140,7 @@ def sound_effects(browser):
 
     pg.click("button[aria-label=Impostazioni]")
     pg.wait_for_timeout(700)
+    settings_page(pg, "sounds")
     pg.click(".switch-row:has-text('Effetti sonori') [role=switch]")
     pg.wait_for_timeout(300)
     check(sounds() == 3, "turning them on plays a preview")

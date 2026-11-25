@@ -2,6 +2,18 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.8.0
+
+- **Settings in pages**: on the iPhone (and an iPad held upright or in Split View) the settings open on a list of
+  sections, like the Settings app of iOS; a section slides in from the right, and "‹ Settings" or a swipe from the
+  left edge goes back. An iPad held sideways shows the list on the left and one section on the right, like the
+  computer.
+- **Sections regrouped**: the account on top (password, two-step verification, devices, sign out); Appearance,
+  Sounds (now on their own), Reading (with offline reading) and Notifications; Feeds and Apps and integrations
+  (Reeder, Save for later, Add to Home Screen); for administrators, Administration with Users, Backup and the ad
+  filter; About.
+- **iPad**: the settings window no longer reaches up under the status bar; it keeps a margin at the top and bottom.
+
 ## 1.7.3
 
 - **"You've read everything" shows the cards of the login page**, floating the same way, in place of the koi:
