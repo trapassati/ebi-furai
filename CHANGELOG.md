@@ -2,7 +2,7 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 1.10.1
 
 - **YouTube: one tap to play**: the article shows YouTube's own player straight away, so its play button starts the
   video (before, the thumbnail had to be tapped first, and on the iPhone the player asked for a second tap).
