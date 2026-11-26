@@ -1,5 +1,6 @@
 """YouTube channels: large thumbnails with the play sign, the player inside
-the article (loaded only on tap), and hiding the Shorts."""
+the article (paused when the article leaves the screen), and hiding the
+Shorts."""
 import base64, html, time
 from lib import *
 
@@ -56,27 +57,28 @@ def player(browser):
         check(pg.locator("#pane-list .vthumb .vthumb-tag").count() == 1, "the Short is labelled")
         check(pg.locator("#pane-list .thumb").count() == 0, "no small square thumbnail for videos")
 
-        frames = []
-        pg.on("request", lambda r: frames.append(r.url) if "youtube" in r.url else None)
+        # A stand-in for YouTube's player that notes the commands it gets.
+        pg.route("https://www.youtube-nocookie.com/**", lambda r: r.fulfill(
+            body="<script>addEventListener('message', (e) => { document.title = String(e.data); });</script>",
+            content_type="text/html"))
         pg.click("#pane-list .arow >> nth=0")
-        pg.wait_for_selector(".yt-poster")
-        pg.wait_for_timeout(600)
-        check(not frames, "nothing is asked to YouTube before the tap")
+        pg.wait_for_selector(".yt-frame iframe")
+        pg.wait_for_timeout(800)
+        src = pg.locator(".yt-frame iframe").get_attribute("src")
+        check(src.startswith("https://www.youtube-nocookie.com/embed/aaaaaaaaaa0?"), "YouTube's player is there at once")
+        check("autoplay" not in src and "enablejsapi=1" in src, "it starts with its own play button and can be paused")
+        check(pg.locator(".yt-frame iframe").get_attribute("referrerpolicy") == "strict-origin-when-cross-origin",
+              "the player gets the origin as referrer")
         check(pg.locator(".article-body img").count() == 0, "the feed's thumbnail gives way to the player")
         check(pg.locator(".article-body:has-text('Descrizione di Video lungo')").count() == 1, "the description stays")
         link = pg.locator(".yt-open")
         check(link.get_attribute("href") == "https://www.youtube.com/watch?v=aaaaaaaaaa0", "Guarda su YouTube links the video")
         check(pg.locator("button[aria-label='Testo completo']").is_disabled(), "no full text for a video")
 
-        pg.route("https://www.youtube-nocookie.com/**", lambda r: r.fulfill(body="<p>player</p>", content_type="text/html"))
-        pg.click(".yt-poster")
-        pg.wait_for_selector(".yt-frame iframe")
-        src = pg.locator(".yt-frame iframe").get_attribute("src")
-        check(src.startswith("https://www.youtube-nocookie.com/embed/aaaaaaaaaa0?"), "the tap loads the nocookie player")
-        check(pg.locator(".yt-frame iframe").get_attribute("referrerpolicy") == "strict-origin-when-cross-origin",
-              "the player gets the origin as referrer")
-        pg.wait_for_timeout(1500)
-        check(pg.locator(".yt-poster").count() == 0, "the thumbnail leaves once the player is there")
+        player_frame = next(f for f in pg.frames if f.url.startswith("https://www.youtube-nocookie.com/"))
+        pg.click("#pane-reader .back-reader")
+        pg.wait_for_timeout(800)
+        check("pauseVideo" in player_frame.evaluate("document.title"), "going back to the list pauses the video")
         check(not pg.errors, f"no page errors {pg.errors}")
     finally:
         remove_channel(fid)

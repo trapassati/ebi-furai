@@ -11,7 +11,7 @@ import { edgeBack } from './gestures.js';
 import { mountSources, renderSources, syncSelected } from './views/sources.js';
 import { installShortcuts } from './shortcuts.js';
 import { mountList, resetList, renderListHeader, updateRow, rowsChanged, startSearch, listAtTop, listHasStale } from './views/list.js';
-import { mountReader, showArticle, showEmptyReader, articleStateChanged } from './views/reader.js';
+import { mountReader, showArticle, showEmptyReader, articleStateChanged, pauseReaderVideo } from './views/reader.js';
 import { showLogin, hideLogin } from './views/login.js';
 import * as offline from './offline/index.js';
 import * as push from './push.js';
@@ -45,6 +45,15 @@ function computeCols() {
   return 1;
 }
 
+// Whether the reader column is on screen: on the phone only as its own
+// screen, with two columns unless the sources take its place. A video
+// stops when it is not.
+function readerOnScreen() {
+  if (state.cols === 1) return state.view === 'reader';
+  if (state.cols === 2) return state.view !== 'sources';
+  return true;
+}
+
 function applyLayout() {
   const cols = computeCols();
   desk.update(cols);
@@ -58,6 +67,7 @@ function applyLayout() {
     if (cols === 1 && before > 1 && state.view === 'list' && state.articleId) state.view = 'reader';
     if (cols === 1 && before > 1) writeHash();
     body.dataset.view = state.view;
+    if (!readerOnScreen()) pauseReaderVideo();
     syncSelected();
     if (state.articleId) updateRow(state.articleId); // selection shows only with columns
     if (cols > 1 && state.articleId) requestAnimationFrame(() => requestAnimationFrame(showSelectedRow));
@@ -128,6 +138,7 @@ function setView(view, { animated = true } = {}) {
     if (forward) motion.pushPane(from, to); else motion.popPane(from, to);
   }
   state.view = view;
+  if (!readerOnScreen()) pauseReaderVideo();
   body.dataset.view = view;
   syncSelected();
   revealPane(to);

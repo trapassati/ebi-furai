@@ -2,14 +2,22 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+- **YouTube: one tap to play**: the article shows YouTube's own player straight away, so its play button starts the
+  video (before, the thumbnail had to be tapped first, and on the iPhone the player asked for a second tap).
+  Offline the thumbnail stays, with a note.
+- **The video stops when you leave it**: going back to the list, swiping back, rotating the iPad so the article
+  hides, or sending the app to the background pauses it (it no longer keeps playing unseen).
+
 ## 1.10.0
 
 - **YouTube channels as feeds**: the address of a channel (`/channel/UC…`, `@name`, `/c/…`, `/user/…`), of a
   playlist or of a video becomes the channel's (or playlist's) feed, without the cookie page YouTube shows from
   the EU. New videos arrive within seconds (YouTube's feeds use a WebSub hub).
 - **Videos read well**: the thumbnail, large in the list with a play sign ("Shorts" on the short ones), and the
-  description with its links as the article, in Reeder too. In the app the video plays inside the article: the
-  player is loaded from youtube-nocookie.com only when you tap it. "Watch on YouTube" opens it in the YouTube app.
+  description with its links as the article, in Reeder too. In the app the video plays inside the article, from
+  youtube-nocookie.com. "Watch on YouTube" opens it in the YouTube app.
 - **Hide Shorts** (feed settings of a YouTube channel): the Shorts no longer show in the lists, in the counters or in
   Reeder, the ones already there too; turned off, they come back as read.
 

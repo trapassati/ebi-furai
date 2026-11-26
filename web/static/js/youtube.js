@@ -1,10 +1,8 @@
 // YouTube videos: recognize them from the article link, and the player
-// that loads from youtube-nocookie.com only when the video is tapped (until
-// then YouTube is not contacted: the thumbnail comes through the server).
+// from youtube-nocookie.com at the top of the article.
 
 import { t } from './i18n.js';
 import { h, icon } from './ui.js';
-import * as motion from './motion.js';
 
 const HOSTS = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com']);
 const ID = /^[0-9A-Za-z_-]{11}$/;
@@ -41,40 +39,41 @@ export function listThumb(a, video) {
   return box;
 }
 
-// The player at the top of the article: the thumbnail with a big play
-// button, replaced by YouTube's player on tap, and "Watch on YouTube".
+// The player at the top of the article, YouTube's own (one tap on its
+// play button starts the video), and "Watch on YouTube". Offline it is the
+// thumbnail only.
+const ORIGIN = 'https://www.youtube-nocookie.com';
+
 export function playerBlock(a, video) {
   const frame = h('div', { class: 'yt-frame' + (video.short ? ' short' : '') });
-  const play = h('button', { class: 'yt-poster', 'aria-label': t('Play the video') },
-    a.thumbnail ? h('img', { src: a.thumbnail, alt: '' }) : null,
-    h('span', { class: 'yt-play' }, icon('s-play')));
-  const thumb = play.querySelector('img');
-  if (thumb) thumb.addEventListener('error', () => thumb.remove(), { once: true });
-  play.addEventListener('click', () => {
-    const src = `https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&playsinline=1&rel=0`;
-    const iframe = h('iframe', {
-      src, title: a.title,
+  if (navigator.onLine === false) {
+    frame.append(h('div', { class: 'yt-poster' },
+      a.thumbnail ? h('img', { src: a.thumbnail, alt: '' }) : null,
+      h('span', { class: 'yt-offline', text: t('The video plays when you are online') })));
+  } else {
+    // enablejsapi: the app can pause it (leaving the article, the app in
+    // the background).
+    frame.append(h('iframe', {
+      src: `${ORIGIN}/embed/${video.id}?playsinline=1&rel=0&enablejsapi=1`, title: a.title,
       allow: 'autoplay; encrypted-media; picture-in-picture; fullscreen',
       allowfullscreen: true,
       // The app sends no referrer, but YouTube's player refuses to start
       // without one: it gets the origin only.
       referrerpolicy: 'strict-origin-when-cross-origin',
-    });
-    frame.prepend(iframe);
-    // The poster stays over the player while it loads, then fades away.
-    play.disabled = true;
-    const gone = () => play.remove();
-    iframe.addEventListener('load', () => {
-      if (motion.enabled()) window.gsap.to(play, { opacity: 0, scale: 1.03, duration: 0.35, ease: 'power2.out', onComplete: gone });
-      else gone();
-    }, { once: true });
-    setTimeout(gone, 6000);
-    if (motion.enabled()) motion.pop(play.querySelector('.yt-play'));
-  }, { once: true });
-  frame.append(play);
+    }));
+  }
   const open = h('a', { class: 'btn btn-plain yt-open', href: a.url, target: '_blank', rel: 'noopener noreferrer' },
     icon('o-arrow-top-right-on-square', 'w-4 h-4'), t('Watch on YouTube'));
   return h('div', { class: 'yt-block' }, frame, open);
+}
+
+// pauseVideos pauses the YouTube players inside root (the position stays).
+export function pauseVideos(root) {
+  for (const f of root.querySelectorAll('.yt-frame iframe')) {
+    try {
+      f.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), ORIGIN);
+    } catch (e) { /* not loaded yet */ }
+  }
 }
 
 // The feed's content starts with the same thumbnail linked to the video
