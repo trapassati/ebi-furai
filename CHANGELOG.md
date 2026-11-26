@@ -2,7 +2,7 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 1.9.0
 
 - **Real time page for administrators** (Settings › Administration): whether instant updates work, the public
   address the hubs call and where it comes from (learned from the app or `PUBLIC_URL`), how many feeds get instant
