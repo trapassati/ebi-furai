@@ -233,7 +233,9 @@ func mediaHTML(it *gofeed.Item, link, thumb string) string {
 		b.WriteString("<p>")
 		for i, line := range strings.Split(para, "\n") {
 			if i > 0 {
-				b.WriteString("<br>")
+				// The newline keeps the lines apart in the plain text too
+				// (the preview and the search).
+				b.WriteString("<br>\n")
 			}
 			b.WriteString(linkify(line))
 		}
