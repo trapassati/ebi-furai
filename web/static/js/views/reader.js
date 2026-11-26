@@ -12,7 +12,7 @@ import * as sounds from '../sounds.js';
 import { enableImageViewer } from './imageviewer.js';
 import { sourceLabel } from './list.js';
 import { startListening, stopListening, supported as canListen } from './listen.js';
-import { dropLeadingThumb, playerBlock, videoOf } from '../youtube.js';
+import { dropLeadingThumb, pauseVideos, playerBlock, videoOf } from '../youtube.js';
 
 let ctx;
 let navDir = 0; // +1 next, -1 previous: direction of the content animation
@@ -70,6 +70,16 @@ export function mountReader(pane, context) {
   keepPlace(scroller, '.reader-title, .article-body > *');
   showEmptyReader();
 }
+
+// A video keeps playing only while its article is on screen: the app
+// pauses it when the reader goes away and when the app goes to the
+// background.
+export function pauseReaderVideo() {
+  if (wrap) pauseVideos(wrap);
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') pauseReaderVideo();
+});
 
 export function showEmptyReader() {
   stopListening();

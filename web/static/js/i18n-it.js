@@ -684,6 +684,6 @@ export const IT = {
   "When a feed offers it, its hub warns the server as soon as there is something new, and the articles arrive within seconds. Feeds with a password never use it. It applies to all users.": "Quando un feed lo offre, il suo hub avvisa il server appena c'è qualcosa di nuovo e gli articoli arrivano in pochi secondi. I feed con password non lo usano mai. Vale per tutti gli utenti.",
   "Hide Shorts": "Nascondi gli Shorts",
   "Only the regular videos: the Shorts of this channel don't show in the lists, in the counters or in Reeder.": "Solo i video normali: gli Shorts di questo canale non compaiono negli elenchi, nei contatori e in Reeder.",
-  "Play the video": "Riproduci il video",
+  "The video plays when you are online": "Il video si vede quando sei online",
   "Watch on YouTube": "Guarda su YouTube",
 };

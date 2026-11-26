@@ -43,7 +43,7 @@ The interface is in **English and Italian**, chosen from the device's language.
   (or always, per feed); reading time; pictures full screen with zoom; search across everything you have;
   articles read aloud by the device's voice.
 - **YouTube channels as feeds**: paste the address of a channel, a handle (@name), a playlist or a video; new
-  videos arrive within seconds, play in the app (from youtube-nocookie.com, only when you tap them) and the Shorts
+  videos arrive within seconds, play in the app (from youtube-nocookie.com) and the Shorts
   can be hidden channel by channel.
 - **Read later**: save any page from the browser (a bookmarklet) or from the iPhone's share button (a Shortcut);
   its text is kept in its own collection, offline too.
