@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -183,9 +184,11 @@ func (s *Server) handleGetArticle(w http.ResponseWriter, r *http.Request) {
 	// from other feeds with it).
 	var also []int64
 	if r.URL.Query().Get("mark_read") == "1" && !a.Read {
-		if err := s.store.SetRead(uid, id, true); err == nil {
+		if _, err := s.store.OpenArticle(uid, id); err == nil {
 			a.Read = true
 			also, _ = s.store.ReadDuplicates(uid, id)
+		} else {
+			slog.Warn("opening an article", "err", err)
 		}
 	}
 	out := s.articleJSON(a)
@@ -203,6 +206,7 @@ func (s *Server) handleUpdateArticle(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Read    *bool `json:"read"`
 		Starred *bool `json:"starred"`
+		Opened  bool  `json:"opened"` // read because it was opened (offline): counted for the statistics
 	}
 	if !readJSON(w, r, &req) {
 		return
@@ -210,7 +214,13 @@ func (s *Server) handleUpdateArticle(w http.ResponseWriter, r *http.Request) {
 	uid := userID(r)
 	out := map[string]any{"ok": true}
 	if req.Read != nil {
-		if err := s.store.SetRead(uid, id, *req.Read); err != nil {
+		var err error
+		if *req.Read && req.Opened {
+			_, err = s.store.OpenArticle(uid, id)
+		} else {
+			err = s.store.SetRead(uid, id, *req.Read)
+		}
+		if err != nil {
 			storeError(w, err)
 			return
 		}

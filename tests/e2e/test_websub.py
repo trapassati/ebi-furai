@@ -1,5 +1,6 @@
-"""Instant updates (WebSub): the sign in the feed settings and the callback
-the hubs call (confirmations and signed notifications)."""
+"""Instant updates (WebSub): the sign in the feed settings, the callback
+the hubs call (confirmations and signed notifications) and the page the
+administrators check them on."""
 import hashlib, hmac, secrets, urllib.error, urllib.parse, urllib.request
 
 from lib import *
@@ -86,5 +87,37 @@ def hub_calls(browser):
     check(others == 2, "the other feeds keep their turn")
 
 
+def admin_page(browser):
+    _, url = feed("Ricette")
+    subscribe(url, hub="https://hub.example/", notified_at=int(time.time()) - 120)
+    _, url = feed("Notizie del giorno")
+    subscribe(url, hub="https://hub.example/", token="f" * 32, verified_until=0,
+              last_error="denied by the hub: not today", requested_at=int(time.time()) - 3600)
+    pg = login(context(browser, IPHONE))
+    pg.click("button[aria-label=Impostazioni]")
+    pg.wait_for_selector(".settings-list")
+    settings_page(pg, "websub")
+    pg.wait_for_selector(".websub-status")
+    check(pg.inner_text(".settings-head .sheet-title") == "In tempo reale", "the page has its name")
+    check("127.0.0.1" in pg.inner_text(".websub-status") and "PUBLIC_URL" in pg.inner_text(".websub-status"),
+          "it shows the address and where it comes from")
+    stats = [x.strip() for x in pg.locator(".websub-stat-value").all_inner_texts()]
+    check(stats == ["1", "0", "1"], f"one instant, none waiting, one with errors: {stats}")
+    check(pg.locator("text=hub.example").count() >= 1, "the hub is listed")
+    check(pg.locator(".health-row :text('Notizie del giorno')").count() == 1, "the failing feed is named")
+    check(pg.locator("text=L'hub ha rifiutato l'iscrizione").count() == 1, "with what the error means")
+    pg.click("text=Richiedi di nuovo agli hub")
+    pg.wait_for_timeout(600)
+    # The server may already have asked again (and failed: hub.example is
+    # not a real hub): either way the hour-long pause is gone.
+    asked = sql("SELECT requested_at FROM websub WHERE token = ?", "f" * 32)[0][0]
+    check(asked == 0 or asked > time.time() - 60, "asking again skips the pause")
+    check(not pg.errors, "no page errors")
+
+    # Not for the others: the page is missing and the API refuses.
+    status, _ = call("GET", "/api/admin/websub")
+    check(status in (401, 403), "the API needs an administrator")
+
+
 if __name__ == "__main__":
-    run(instant_shown, hub_calls)
+    run(instant_shown, hub_calls, admin_page)

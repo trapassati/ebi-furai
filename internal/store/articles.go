@@ -359,3 +359,35 @@ func indexFullText(tx *sql.Tx, id int64, text string) error {
 	_, err := tx.Exec(`INSERT INTO articles_fts(rowid, title, body) VALUES(?, ?, ?)`, id, title, text)
 	return err
 }
+
+// OpenArticle marks as read an article opened in the app and, if it was
+// unread, counts the open for its feed (the feed statistics). It reports
+// whether the article was unread.
+func (s *Store) OpenArticle(userID, id int64) (bool, error) {
+	var feedID int64
+	err := s.DB.QueryRow(`UPDATE articles SET read = 1 WHERE id = ? AND user_id = ? AND read = 0 RETURNING feed_id`,
+		id, userID).Scan(&feedID)
+	if errors.Is(err, sql.ErrNoRows) {
+		// Already read, or not there: say which.
+		var one int
+		if err := s.DB.QueryRow(`SELECT 1 FROM articles WHERE id = ? AND user_id = ?`, id, userID).Scan(&one); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return false, ErrNotFound
+			}
+			return false, err
+		}
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, s.ArticleOpened(feedID)
+}
+
+// ArticleOpened counts an article opened in the app (for the feed
+// statistics): one more open for its feed today.
+func (s *Store) ArticleOpened(feedID int64) error {
+	_, err := s.DB.Exec(`INSERT INTO feed_opens(feed_id, day, opens) VALUES(?, ?, 1)
+		ON CONFLICT(feed_id, day) DO UPDATE SET opens = opens + 1`, feedID, now()/86400)
+	return err
+}

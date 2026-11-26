@@ -2,6 +2,17 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+- **Real time page for administrators** (Settings › Administration): whether instant updates work, the public
+  address the hubs call and where it comes from (learned from the app or `PUBLIC_URL`), how many feeds get instant
+  updates, wait for their hub or have errors, the hubs in use, the last notification received, and what a hub
+  answered when it refused or never confirmed a subscription, in plain words, with a button to ask the hubs again
+  now. Feeds of other users are not named.
+- **Opened articles are counted per feed** (from this version on, nothing to do): the groundwork for the feed
+  statistics, which will tell the feeds you read from those you only mark as read. Marking all as read does not
+  count; articles opened offline count when they are sent to the server.
+
 ## 1.8.0
 
 - **Settings in pages**: on the iPhone (and an iPad held upright or in Split View) the settings open on a list of

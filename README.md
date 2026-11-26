@@ -218,6 +218,11 @@ subscription has its own secret, and a notification that is not signed with it i
 makes the server download the feed as usual. Feeds that need a password are never announced to a hub, and a feed
 followed by several people has a single subscription.
 
+To see whether it works, administrators open **Settings › Real time**: the public address and where it comes from,
+how many feeds get instant updates, waiting or with errors, the hubs in use, the last notification received, and
+what each hub answered when it refused or never confirmed a subscription, with a button to ask again now. Feeds of
+other users are not named there.
+
 ## Backups and restore
 
 The server saves a compressed copy of the database every day, keeping the last 7 days and 4 weeks. Administrators

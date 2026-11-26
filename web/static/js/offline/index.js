@@ -166,7 +166,7 @@ async function applyLocal(id, changes) {
   if ('read' in changes && changes.read !== rec.read) readDelta = changes.read ? -1 : 1;
   if ('starred' in changes && changes.starred !== rec.starred) starDelta = changes.starred ? 1 : -1;
   if (!readDelta && !starDelta) return;
-  await db.put('articles', { ...rec, ...changes });
+  await db.put('articles', { ...rec, ...pick(changes, ['read', 'starred']) });
   await adjustCounts(rec, readDelta, starDelta);
 }
 
@@ -240,7 +240,7 @@ function intercept(method, path, body) {
 
 async function articleAction(id, changes) {
   await applyLocal(id, changes);
-  const action = { kind: 'article', id, ...pick(changes, ['read', 'starred']) };
+  const action = { kind: 'article', id, ...pick(changes, ['read', 'starred', 'opened']) };
   if (status.pending === 0 && status.online) {
     try {
       return await api('PATCH', `/api/articles/${id}`, changes, { raw: true });
@@ -376,7 +376,8 @@ async function localArticle(id, markRead) {
   const rec = await db.get('articles', id);
   if (!rec) throw offlineError(t('You\'re offline: this article was not saved'));
   if (markRead && !rec.read) {
-    await articleAction(id, { read: true });
+    // opened: the server counts it for the feed statistics.
+    await articleAction(id, { read: true, opened: true });
     rec.read = true;
   }
   return rec;
