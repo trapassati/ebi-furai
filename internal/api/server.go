@@ -185,6 +185,8 @@ func (s *Server) Routes() http.Handler {
 				r.Delete("/users/{id}", s.handleDeleteUser)
 				r.Put("/adfilter", s.handleAdFilterSet)
 				r.Post("/adfilter/update", s.handleAdFilterUpdate)
+				r.Get("/websub", s.handleWebSubStatus)
+				r.Post("/websub/retry", s.handleWebSubRetry)
 				r.Get("/update", s.handleUpdate)
 				r.Get("/backups", s.handleListBackups)
 				r.Post("/backups", s.handleCreateBackup)

@@ -153,6 +153,20 @@ func PublicOrigin(origin string) (string, bool) {
 	return "https://" + strings.ToLower(u.Host), true
 }
 
+// Fixed reports whether the public address comes from PUBLIC_URL (rather
+// than being learned from the app).
+func (m *Manager) Fixed() bool { return m.fixed != "" }
+
+// RetryFailed asks the hubs again, now, for the subscriptions that went
+// wrong (the administrator's "try again").
+func (m *Manager) RetryFailed() error {
+	if err := m.store.WebSubRetryFailed(); err != nil {
+		return err
+	}
+	m.Kick()
+	return nil
+}
+
 func (m *Manager) Kick() {
 	select {
 	case m.kick <- struct{}{}:

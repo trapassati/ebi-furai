@@ -28,6 +28,7 @@ import { offlineControls } from './settings/offline.js';
 import { readingControls } from './settings/reading.js';
 import { adControls } from './settings/adfilter.js';
 import { backupControls } from './settings/backups.js';
+import { websubControls } from './settings/websub.js';
 import { changePassword, exportOPML, logout, twoFactorRow } from './settings/account.js';
 import { createUser, loadUsers } from './settings/admin.js';
 
@@ -99,6 +100,7 @@ export function openSettings(ctx) {
       h('button', { class: 'btn btn-primary w-full mt-4', onclick: () => createUser(usersBox) }, icon('o-user-plus', 'w-5 h-5'), t('New user'))] } : null,
     admin ? { id: 'backup', group: 'admin', label: 'Backup', icon: 'o-circle-stack', tone: 'mint', body: () => [backupControls()] } : null,
     admin ? { id: 'ads', group: 'admin', label: t('Ad filter'), icon: 'o-no-symbol', tone: 'sunset', body: () => [adControls(true)] } : null,
+    admin ? { id: 'websub', group: 'admin', label: t('Real time'), icon: 'o-bolt', tone: 'sunset', body: () => [websubControls()] } : null,
     { id: 'about', group: 'about', label: t('About'), icon: 'o-information-circle', tone: 'plain', detail: state.update ? '1' : '', body: () => [
       h('div', { class: 'group' },
         desktopKeys ? rowButton('o-command-line', 'plain', t('Keyboard shortcuts'), showShortcuts) : null,

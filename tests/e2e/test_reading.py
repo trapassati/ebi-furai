@@ -6,6 +6,7 @@ from lib import *
 def mark_all_and_undo(browser):
     sql("UPDATE articles SET read = 1 WHERE id IN (SELECT id FROM articles ORDER BY id LIMIT 5)")
     before = unread()
+    opens = sql("SELECT COALESCE(SUM(opens), 0) FROM feed_opens")[0][0]
     pg = login(context(browser))
     open_collection(pg, 0)
     pg.click("#pane-list button[aria-label='Segna tutto come letto']")
@@ -18,6 +19,7 @@ def mark_all_and_undo(browser):
     check(home_counts(pg)["unread"] == 0, "home counters at zero at once")
     pg.wait_for_selector("#pane-list .empty-papers", state="visible", timeout=8000)
     check(unread() == 0, "server: everything read")
+    check(sql("SELECT COALESCE(SUM(opens), 0) FROM feed_opens")[0][0] == opens, "marking all as read is not opening")
     pg.click(".toast-action")
     pg.wait_for_timeout(2500)
     check(unread() == before, f"undo brings back exactly {before} articles (the 5 read before stay read)")
@@ -175,10 +177,12 @@ def reading_appearance(browser):
     # The "Aa" window holds only what changes the article and always fits,
     # with Done in reach, even on a small iPhone.
     pg = login(context(browser, {"viewport": {"width": 375, "height": 667}, "has_touch": True, "is_mobile": True}))
+    opens = sql("SELECT COALESCE(SUM(opens), 0) FROM feed_opens")[0][0]
     open_collection(pg, 0)
     pg.click(".arow >> nth=0")
     pg.wait_for_selector(".article-body")
     pg.wait_for_timeout(600)
+    check(sql("SELECT COALESCE(SUM(opens), 0) FROM feed_opens")[0][0] == opens + 1, "opening an article counts for its feed")
     pg.click("button[aria-label=Aspetto]")
     pg.wait_for_selector(".reading-appearance")
     pg.wait_for_timeout(600)

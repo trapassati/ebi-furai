@@ -94,6 +94,7 @@ func (s *Server) handleActions(w http.ResponseWriter, r *http.Request) {
 			ID      int64  `json:"id"`
 			Read    *bool  `json:"read"`
 			Starred *bool  `json:"starred"`
+			Opened  bool   `json:"opened"` // read because it was opened
 			Source  string `json:"source"`
 			MaxID   int64  `json:"max_id"`
 			Search  string `json:"q"`
@@ -113,7 +114,11 @@ func (s *Server) handleActions(w http.ResponseWriter, r *http.Request) {
 		switch a.Kind {
 		case "article":
 			if a.Read != nil {
-				err = s.store.SetRead(uid, a.ID, *a.Read)
+				if *a.Read && a.Opened {
+					_, err = s.store.OpenArticle(uid, a.ID)
+				} else {
+					err = s.store.SetRead(uid, a.ID, *a.Read)
+				}
 				if err == nil && *a.Read {
 					_, err = s.store.ReadDuplicates(uid, a.ID)
 				}

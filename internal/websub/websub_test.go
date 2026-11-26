@@ -463,3 +463,63 @@ func TestLearnedAddress(t *testing.T) {
 		t.Fatalf("PUBLIC_URL overridden: %q", fixed.Base())
 	}
 }
+
+func TestReportAndRetry(t *testing.T) {
+	e := setup(t)
+	ctx := context.Background()
+	report := func() *store.WebSubReport {
+		t.Helper()
+		r, err := e.st.WebSubReport(e.users[0])
+		if err != nil {
+			t.Fatal(err)
+		}
+		return r
+	}
+	if r := report(); r.Followed != 1 || r.WithHub != 0 || len(r.Hubs) != 0 {
+		t.Fatalf("before any hub: %+v", r)
+	}
+	e.seen(t)
+	if r := report(); r.WithHub != 1 || r.Pending != 1 || r.Active != 0 {
+		t.Fatalf("hub found, not asked yet: %+v", r)
+	}
+	e.m.check(ctx)
+	r := report()
+	host := strings.TrimPrefix(e.hub.srv.URL, "http://")
+	if r.Active != 1 || r.Pending != 0 || len(r.Hubs) != 1 || r.Hubs[0] != (store.WebSubHub{Host: host, Active: 1}) {
+		t.Fatalf("subscribed: %+v", r)
+	}
+
+	// The hub refuses: an error, named for whoever follows the feed only.
+	e.hub.refuse()
+	e.st.DB.Exec(`UPDATE websub SET verified_until = ?`, time.Now().Unix()+600)
+	e.m.check(ctx)
+	r = report()
+	if r.Failing != 1 || r.Active != 0 || len(r.Problems) != 1 || r.Problems[0].Title != "F" ||
+		!strings.Contains(r.Problems[0].Error, "not today") || r.Hubs[0].Failing != 1 {
+		t.Fatalf("refused: %+v", r)
+	}
+	other, err := e.st.WebSubReport(e.users[0] + 1000)
+	if err != nil || other.Problems[0].Title != "" {
+		t.Fatalf("someone else's feed named: %+v %v", other, err)
+	}
+
+	// "Ask again": the hub is asked at once, not after the usual pause.
+	e.hub.mu.Lock()
+	e.hub.deny = false
+	e.hub.mu.Unlock()
+	before := e.hub.count()
+	e.m.check(ctx)
+	if e.hub.count() != before {
+		t.Fatal("asked again before the pause")
+	}
+	if err := e.m.RetryFailed(); err != nil {
+		t.Fatal(err)
+	}
+	e.m.check(ctx)
+	if e.hub.count() != before+1 {
+		t.Fatalf("not asked again: %d requests", e.hub.count())
+	}
+	if r := report(); r.Active != 1 || r.Failing != 0 || len(r.Problems) != 0 {
+		t.Fatalf("after asking again: %+v", r)
+	}
+}

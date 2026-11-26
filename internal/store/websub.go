@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"net/url"
+	"sort"
 )
 
 // WebSub is the subscription of a feed address to its hub.
@@ -161,4 +163,104 @@ func (s *Store) WebSubNotified(id int64, feedURL string, minGap int64) (int64, e
 		return 0, err
 	}
 	return res.RowsAffected()
+}
+
+// WebSubHub sums up the subscriptions to one hub.
+type WebSubHub struct {
+	Host    string `json:"host"`
+	Active  int    `json:"active"`
+	Failing int    `json:"failing"`
+}
+
+// WebSubProblem is a subscription the hub refused or never confirmed.
+type WebSubProblem struct {
+	Title string `json:"title"` // empty when the administrator does not follow the feed
+	Hub   string `json:"hub"`
+	Error string `json:"error"`
+	At    int64  `json:"at"`
+}
+
+// WebSubReport is what the administrators see of the instant updates.
+type WebSubReport struct {
+	Followed     int             `json:"followed"` // feed addresses followed without a password
+	WithHub      int             `json:"with_hub"` // of those, how many name a hub
+	Active       int             `json:"active"`
+	Pending      int             `json:"pending"`
+	Failing      int             `json:"failing"`
+	LastNotified int64           `json:"last_notified"`
+	Hubs         []WebSubHub     `json:"hubs"`
+	Problems     []WebSubProblem `json:"problems"`
+}
+
+// WebSubReport sums up the subscriptions for the administration page.
+// Only the feeds adminID follows are named: the others' subscriptions are
+// their own business (they show as "a feed of another user").
+func (s *Store) WebSubReport(adminID int64) (*WebSubReport, error) {
+	r := &WebSubReport{Hubs: []WebSubHub{}, Problems: []WebSubProblem{}}
+	if err := s.DB.QueryRow(`SELECT COUNT(DISTINCT f.url) FROM feeds f JOIN users u ON u.id = f.user_id
+		WHERE f.kind = 'feed' AND f.auth_user = '' AND u.disabled = 0`).Scan(&r.Followed); err != nil {
+		return nil, err
+	}
+	if err := s.DB.QueryRow(`SELECT COALESCE(MAX(notified_at), 0) FROM websub`).Scan(&r.LastNotified); err != nil {
+		return nil, err
+	}
+	list, err := s.WebSubs()
+	if err != nil {
+		return nil, err
+	}
+	t := now()
+	hubs := map[string]*WebSubHub{}
+	var order []string
+	for _, w := range list {
+		if !w.Followed || !w.Declared {
+			continue // on its way out
+		}
+		r.WithHub++
+		host := w.Hub
+		if u, err := url.Parse(w.Hub); err == nil && u.Host != "" {
+			host = u.Host
+		}
+		hub := hubs[host]
+		if hub == nil {
+			hub = &WebSubHub{Host: host}
+			hubs[host] = hub
+			order = append(order, host)
+		}
+		switch {
+		case w.VerifiedUntil > t:
+			r.Active++
+			hub.Active++
+		case w.LastError != "":
+			r.Failing++
+			hub.Failing++
+			p := WebSubProblem{Hub: host, Error: w.LastError, At: w.RequestedAt}
+			err := s.DB.QueryRow(`SELECT title FROM feeds WHERE user_id = ? AND url = ? AND kind = 'feed' LIMIT 1`,
+				adminID, w.FeedURL).Scan(&p.Title)
+			if err != nil && !errors.Is(err, sql.ErrNoRows) {
+				return nil, err
+			}
+			r.Problems = append(r.Problems, p)
+		default:
+			r.Pending++
+		}
+	}
+	for _, h := range order {
+		r.Hubs = append(r.Hubs, *hubs[h])
+	}
+	sort.SliceStable(r.Hubs, func(i, j int) bool {
+		a, b := r.Hubs[i], r.Hubs[j]
+		if a.Active+a.Failing != b.Active+b.Failing {
+			return a.Active+a.Failing > b.Active+b.Failing
+		}
+		return a.Host < b.Host
+	})
+	sort.SliceStable(r.Problems, func(i, j int) bool { return r.Problems[i].At > r.Problems[j].At })
+	return r, nil
+}
+
+// WebSubRetryFailed has the subscriptions that went wrong asked again at
+// the next check, without waiting for the usual pause.
+func (s *Store) WebSubRetryFailed() error {
+	_, err := s.DB.Exec(`UPDATE websub SET requested_at = 0 WHERE last_error <> '' AND pending = ''`)
+	return err
 }
