@@ -2,7 +2,7 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 1.10.0
 
 - **YouTube channels as feeds**: the address of a channel (`/channel/UC…`, `@name`, `/c/…`, `/user/…`), of a
   playlist or of a video becomes the channel's (or playlist's) feed, without the cookie page YouTube shows from
