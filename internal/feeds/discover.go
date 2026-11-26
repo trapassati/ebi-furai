@@ -49,6 +49,18 @@ func (f *Fetcher) Discover(ctx context.Context, raw string, cred *Credentials) (
 	if _, err := netsafe.ValidateURL(raw); err != nil {
 		return nil, err
 	}
+	if cred == nil {
+		// A channel, handle, playlist or video: the feed YouTube publishes
+		// for it (its pages do not show it, and from the EU they are a
+		// cookie banner).
+		yt, err := f.youTubeFeed(ctx, raw)
+		if err != nil {
+			return nil, err
+		}
+		if yt != "" {
+			raw = yt
+		}
+	}
 	body, final, ctype, err := f.get(ctx, raw, cred)
 	if he, ok := errors.AsType[*httpError](err); ok && he.status == http.StatusUnauthorized {
 		if cred != nil {

@@ -290,7 +290,8 @@ func (s *Server) handleFeedAuth(w http.ResponseWriter, r *http.Request) {
 
 func discoverMessage(err error) string {
 	switch {
-	case errors.Is(err, feeds.ErrNoFeed), errors.Is(err, feeds.ErrAuthRequired), errors.Is(err, feeds.ErrAuthRejected):
+	case errors.Is(err, feeds.ErrNoFeed), errors.Is(err, feeds.ErrAuthRequired), errors.Is(err, feeds.ErrAuthRejected),
+		errors.Is(err, feeds.ErrYouTubeConsent):
 		return err.Error()
 	case errors.Is(err, netsafe.ErrBlocked):
 		return "address not allowed (private or local network)"
@@ -306,10 +307,11 @@ func (s *Server) handleUpdateFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		Title    *string `json:"title"`
-		FolderID *int64  `json:"folder_id"` // 0 = no folder
-		FullText *bool   `json:"full_text"` // download the full text of new articles
-		OpenWeb  *bool   `json:"open_web"`  // open articles on the site
+		Title      *string `json:"title"`
+		FolderID   *int64  `json:"folder_id"`   // 0 = no folder
+		FullText   *bool   `json:"full_text"`   // download the full text of new articles
+		OpenWeb    *bool   `json:"open_web"`    // open articles on the site
+		HideShorts *bool   `json:"hide_shorts"` // YouTube: hide the Shorts
 	}
 	if !readJSON(w, r, &req) {
 		return
@@ -343,6 +345,12 @@ func (s *Server) handleUpdateFeed(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.OpenWeb != nil {
 		if err := s.store.SetFeedOpenWeb(uid, id, *req.OpenWeb); err != nil {
+			storeError(w, err)
+			return
+		}
+	}
+	if req.HideShorts != nil {
+		if err := s.store.SetFeedHideShorts(uid, id, *req.HideShorts); err != nil {
 			storeError(w, err)
 			return
 		}

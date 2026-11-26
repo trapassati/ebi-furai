@@ -9,6 +9,7 @@ import { state, sourceTitle, findFeed, findFolder } from '../state.js';
 import { status as offlineStatus, syncNow as offlineSync } from '../offline/index.js';
 import { actionSheet, centerEmpty, clear, collapsingTitle, confirmDialog, debounce, emptyBlock, feedIcon, h, icon, keepPlace, paperArt, readingMinutes, relTime, showError, toast } from '../ui.js';
 import * as motion from '../motion.js';
+import { listThumb, videoOf } from '../youtube.js';
 import * as sounds from '../sounds.js';
 import { openSaveHelp, removeSaved } from './saved.js';
 
@@ -374,7 +375,10 @@ function rowLabel(a) {
 
 function rowEl(a) {
   const selected = state.articleId === a.id && state.cols > 1;
-  const thumb = a.thumbnail && getPrefs().thumbs !== false
+  const showThumbs = !!a.thumbnail && getPrefs().thumbs !== false;
+  // A YouTube video: its thumbnail, large under the title, with the play sign.
+  const video = showThumbs ? videoOf(a.url) : null;
+  const thumb = showThumbs && !video
     ? h('img', { class: 'thumb', src: a.thumbnail, alt: '', loading: 'lazy', decoding: 'async' }) : null;
   if (thumb) thumb.addEventListener('error', () => thumb.remove(), { once: true });
   const main = h('div', { class: 'arow-main px-4 pt-3.5 pb-4' },
@@ -392,7 +396,8 @@ function rowEl(a) {
       h('div', { class: 'flex-1 min-w-0' },
         h('div', { class: 'a-title font-semibold leading-snug line-clamp-3', text: a.title }),
         a.preview ? h('div', { class: 'a-preview text-soft leading-snug line-clamp-2 mt-1', text: a.preview }) : null),
-      thumb));
+      thumb),
+    video ? listThumb(a, video) : null);
   const bg = h('div', { class: 'arow-bg' },
     h('div', { class: 'left' }, icon('s-star'), h('span', { text: a.starred ? t('Remove') : t('Star') })),
     h('div', { class: 'right' }, h('span', { text: a.read ? t('Unread|one') : t('Read|one') }), icon('o-check-circle')));
@@ -739,10 +744,11 @@ async function toggleThumbs(show) {
     }
   };
   if (!show) {
-    await motion.collapseWidth(listEl.querySelectorAll('.thumb'));
+    await Promise.all([motion.collapseWidth(listEl.querySelectorAll('.thumb')), motion.collapse(listEl.querySelectorAll('.vthumb'))]);
     redraw();
   } else {
     redraw();
     motion.expandWidth(listEl.querySelectorAll('.thumb'));
+    motion.expand(listEl.querySelectorAll('.vthumb'));
   }
 }

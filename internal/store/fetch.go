@@ -27,6 +27,7 @@ type FetchFeed struct {
 	AuthUser       string // HTTP Basic credentials, empty when none
 	AuthPass       string
 	Instant        bool // a WebSub hub tells the server when the feed changes
+	HideShorts     bool // YouTube: new Shorts arrive hidden
 	authSecret     []byte
 }
 
@@ -35,13 +36,13 @@ type FetchFeed struct {
 const instantCol = `EXISTS (SELECT 1 FROM websub w WHERE w.feed_url = feeds.url AND w.verified_until > unixepoch())`
 
 const fetchCols = `id, user_id, url, site_url, title, etag, last_modified, error_count, icon IS NOT NULL, icon_checked_at, last_fetched_at, auth_user, auth_secret,
-	(SELECT u.refresh_minutes FROM users u WHERE u.id = feeds.user_id), COALESCE(folder_id, 0), full_text, ` + instantCol
+	(SELECT u.refresh_minutes FROM users u WHERE u.id = feeds.user_id), COALESCE(folder_id, 0), full_text, ` + instantCol + `, hide_shorts`
 
 func scanFetch(sc interface{ Scan(...any) error }) (*FetchFeed, error) {
 	f := &FetchFeed{}
 	err := sc.Scan(&f.ID, &f.UserID, &f.URL, &f.SiteURL, &f.Title, &f.ETag, &f.LastModified, &f.ErrorCount,
 		&f.HasIcon, &f.IconCheckedAt, &f.LastFetchedAt, &f.AuthUser, &f.authSecret, &f.RefreshMinutes,
-		&f.FolderID, &f.FullText, &f.Instant)
+		&f.FolderID, &f.FullText, &f.Instant, &f.HideShorts)
 	return f, err
 }
 
@@ -155,8 +156,12 @@ type NewArticle struct {
 	PublishedAt int64
 	Text        string // plain text for the full-text index
 	Read        bool   // a filter marked it as read
-	HiddenBy    int64  // the filter that hides it, 0 = visible
+	HiddenBy    int64  // the filter that hides it (HiddenShort: the feed hides Shorts), 0 = visible
 }
+
+// HiddenShort is the hidden_by of a YouTube Short in a feed that hides
+// them: no filter has this id.
+const HiddenShort = -1
 
 // InsertArticles stores new items of a feed, ignoring duplicates. It
 // returns the number of newly inserted articles. With fullText, the visible
@@ -190,7 +195,7 @@ func (s *Store) InsertArticles(feedID, userID int64, fullText bool, items []NewA
 	added := 0
 	for _, a := range items {
 		var hidden any
-		if a.HiddenBy > 0 {
+		if a.HiddenBy != 0 {
 			hidden = a.HiddenBy
 		}
 		urlKey := dedup.URLKey(a.URL)

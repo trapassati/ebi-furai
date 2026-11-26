@@ -93,6 +93,8 @@ func NewStatic(fsys fs.FS, root, appName string, imageProxy bool) (*Static, erro
 	}
 	s.csp = "default-src 'self'; script-src 'self'; style-src 'self'; img-src " + imgSrc +
 		"; connect-src 'self'; font-src 'self'; manifest-src 'self'; worker-src 'self'; media-src 'self' https:; " +
+		// The YouTube player, loaded only when a video is tapped.
+		"frame-src https://www.youtube-nocookie.com; " +
 		"object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 	return s, nil
 }

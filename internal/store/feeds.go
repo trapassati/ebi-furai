@@ -30,6 +30,7 @@ type FeedInfo struct {
 	FullText      bool   `json:"full_text"`           // download the full text of new articles
 	OpenWeb       bool   `json:"open_web"`            // open articles on the site
 	Instant       bool   `json:"instant"`             // new articles arrive through WebSub
+	HideShorts    bool   `json:"hide_shorts"`         // YouTube: Shorts are hidden
 }
 
 type FolderInfo struct {
@@ -101,7 +102,7 @@ func (s *Store) Sources(userID, todayStart int64) (*Sources, error) {
 
 	rows, err = s.DB.Query(`SELECT id, folder_id, title, custom_title, url, site_url, icon IS NOT NULL,
 		error_count, last_error, last_fetched_at, last_ok_at, auth_user, full_text, open_web,
-		`+instantCol+` FROM feeds WHERE user_id = ? AND kind = 'feed'`, userID)
+		`+instantCol+`, hide_shorts FROM feeds WHERE user_id = ? AND kind = 'feed'`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +112,7 @@ func (s *Store) Sources(userID, todayStart int64) (*Sources, error) {
 		f := &FeedInfo{}
 		var folder sql.NullInt64
 		if err := rows.Scan(&f.ID, &folder, &f.OriginalTitle, &f.CustomTitle, &f.URL, &f.SiteURL, &f.HasIcon,
-			&f.ErrorCount, &f.LastError, &f.LastFetchedAt, &f.LastOKAt, &f.AuthUser, &f.FullText, &f.OpenWeb, &f.Instant); err != nil {
+			&f.ErrorCount, &f.LastError, &f.LastFetchedAt, &f.LastOKAt, &f.AuthUser, &f.FullText, &f.OpenWeb, &f.Instant, &f.HideShorts); err != nil {
 			return nil, err
 		}
 		if folder.Valid {
@@ -291,6 +292,27 @@ func (s *Store) SetFeedFullText(userID, id int64, on bool) error {
 
 func (s *Store) SetFeedOpenWeb(userID, id int64, on bool) error {
 	return execOne(s.DB, `UPDATE feeds SET open_web = ? WHERE id = ? AND user_id = ?`, on, id, userID)
+}
+
+// shortsLike matches the links of YouTube Shorts (the feed always uses
+// this form).
+const shortsLike = `url LIKE 'https://www.youtube.com/shorts/%'`
+
+// SetFeedHideShorts hides or shows the Shorts of a YouTube feed, the ones
+// already there too (starred ones stay). Shown again, they come back read:
+// which of them had been read before is not known.
+func (s *Store) SetFeedHideShorts(userID, id int64, on bool) error {
+	if err := execOne(s.DB, `UPDATE feeds SET hide_shorts = ? WHERE id = ? AND user_id = ?`, on, id, userID); err != nil {
+		return err
+	}
+	var err error
+	if on {
+		_, err = s.DB.Exec(`UPDATE articles SET hidden_by = ?, read = 1
+			WHERE feed_id = ? AND user_id = ? AND hidden_by IS NULL AND starred = 0 AND `+shortsLike, HiddenShort, id, userID)
+	} else {
+		_, err = s.DB.Exec(`UPDATE articles SET hidden_by = NULL WHERE feed_id = ? AND user_id = ? AND hidden_by = ?`, id, userID, HiddenShort)
+	}
+	return err
 }
 
 // MoveFeed puts a feed in a folder (folderID 0 = root).

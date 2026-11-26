@@ -334,6 +334,9 @@ func (f *Fetcher) fetchFeed(ctx context.Context, feed *store.FetchFeed) error {
 				a.Title = i18n.T(lang, untitled)
 			}
 			a.HiddenBy, a.Read = filter.Decide(rules, feed.ID, feed.FolderID, a.Title, a.Text)
+			if a.HiddenBy == 0 && feed.HideShorts && IsYouTubeShort(a.URL) {
+				a.HiddenBy, a.Read = store.HiddenShort, true
+			}
 			items = append(items, a)
 		}
 	}
@@ -416,6 +419,11 @@ func buildArticle(it *gofeed.Item, feedBase *url.URL, siteURL string, cutoff int
 	raw := it.Content
 	if strings.TrimSpace(raw) == "" {
 		raw = it.Description
+	}
+	if strings.TrimSpace(raw) == "" {
+		// YouTube: only a media:group, with the thumbnail and the
+		// description.
+		raw = mediaHTML(it, link, thumbnail(it, "", base))
 	}
 	clean := content.Sanitize(raw, base)
 	text := content.PlainText(clean)

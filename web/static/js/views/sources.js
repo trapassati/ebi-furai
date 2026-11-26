@@ -332,7 +332,7 @@ function addFeedDialog() {
   const submit = h('button', { type: 'submit', class: 'btn btn-primary flex-1', text: t('Add') });
   const form = h('form', { class: 'px-5 pt-1 pb-3 flex flex-col gap-3', novalidate: true },
     h('div', { class: 'sheet-title pt-1', text: t('Add feed') }),
-    h('div', { class: 'text-center text-[0.875rem] text-muted -mt-1 mb-1', text: t('The site\'s address works too: the feed is found by itself.') }),
+    h('div', { class: 'text-center text-[0.875rem] text-muted -mt-1 mb-1', text: t('The site\'s address works too, or a YouTube channel or playlist: the feed is found by itself.') }),
     h('div', { class: 'field-wrap' }, icon('o-link'), urlInput),
     h('div', { class: 'flex flex-col gap-1.5' }, h('span', { class: 'field-label', text: t('Folder') }), folderSel),
     authToggle, authBox,
