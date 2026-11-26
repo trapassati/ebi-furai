@@ -554,7 +554,7 @@ export const IT = {
   "The site offers several feeds, pick one:": "Il sito offre più feed, scegline uno:",
   "The site publishes more than one": "Il sito ne pubblica più di uno",
   "The site tells the server as soon as it publishes: new articles arrive within seconds.": "Il sito avvisa il server appena pubblica: i nuovi articoli arrivano in pochi secondi.",
-  "The site's address works too: the feed is found by itself.": "Va bene anche l'indirizzo del sito: il feed viene cercato da solo.",
+  "The site's address works too, or a YouTube channel or playlist: the feed is found by itself.": "Va bene anche l'indirizzo del sito, o di un canale o una playlist di YouTube: il feed viene cercato da solo.",
   "The title is usually enough: with the text the filter catches more, also by mistake.": "Di solito basta il titolo: col testo il filtro prende di più, anche per errore.",
   "The two passwords don't match": "Le due password non coincidono",
   "The user's feeds, folders and articles will be deleted.": "Feed, cartelle e articoli dell'utente verranno cancellati.",
@@ -682,4 +682,8 @@ export const IT = {
   "Ask the hubs again now": "Richiedi di nuovo agli hub",
   "Requests sent: the answers arrive within a few minutes": "Richieste inviate: le risposte arrivano entro pochi minuti",
   "When a feed offers it, its hub warns the server as soon as there is something new, and the articles arrive within seconds. Feeds with a password never use it. It applies to all users.": "Quando un feed lo offre, il suo hub avvisa il server appena c'è qualcosa di nuovo e gli articoli arrivano in pochi secondi. I feed con password non lo usano mai. Vale per tutti gli utenti.",
+  "Hide Shorts": "Nascondi gli Shorts",
+  "Only the regular videos: the Shorts of this channel don't show in the lists, in the counters or in Reeder.": "Solo i video normali: gli Shorts di questo canale non compaiono negli elenchi, nei contatori e in Reeder.",
+  "Play the video": "Riproduci il video",
+  "Watch on YouTube": "Guarda su YouTube",
 };

@@ -1,5 +1,5 @@
-// "Impostazioni del feed": name, full text, open on the site and the
-// filters of one feed, and whether its site sends instant updates. The switches save at once; the name when the sheet
+// "Impostazioni del feed": name, full text (Shorts for YouTube), open on
+// the site and the filters of one feed, and whether its site sends instant updates. The switches save at once; the name when the sheet
 // closes.
 
 import { t } from '../i18n.js';
@@ -8,6 +8,8 @@ import { feedIcon, h, icon, openSheet, showError, tile, toast, toggleSwitch } fr
 import { sourcesChanged } from './sources.js';
 import * as motion from '../motion.js';
 import { openFilters, filtersFor } from './filters.js';
+import { isYouTubeFeed } from '../youtube.js';
+import { reloadList } from './list.js';
 
 function switchRow(label, hint, sw) {
   return h('div', { class: 'switch-row' },
@@ -17,7 +19,9 @@ function switchRow(label, hint, sw) {
 
 export function openFeedSettings(feed) {
   const ref = {};
+  const youtube = isYouTubeFeed(feed);
   let changed = false;
+  let shorts = false; // the Shorts were hidden or shown: the list changes
 
   const name = h('input', {
     class: 'field', type: 'text', value: feed.custom_title || '', placeholder: feed.original_title || feed.url,
@@ -32,6 +36,7 @@ export function openFeedSettings(feed) {
         await patch(`/api/feeds/${feed.id}`, { [key]: sw.checked });
         feed[key] = sw.checked;
         changed = true;
+        if (key === 'hide_shorts') shorts = true;
         if (key === 'full_text' && sw.checked) toast(t('The full text will arrive by itself for new articles and for unread ones'));
       } catch (e) { sw.setChecked(!sw.checked); showError(e); }
     });
@@ -73,7 +78,11 @@ export function openFeedSettings(feed) {
       h('div', { class: 'text-[0.8125rem] text-muted px-1 pt-2', text: t('A short name to show in the list. Leave empty to use the feed\'s title.') }),
       h('div', { class: 'group-label', text: t('Reading') }),
       h('div', { class: 'group px-4' },
-        switchRow(t('Always download the full text'),
+        // A YouTube channel has no text to download, but it has Shorts.
+        youtube ? switchRow(t('Hide Shorts'),
+          t('Only the regular videos: the Shorts of this channel don\'t show in the lists, in the counters or in Reeder.'),
+          option('hide_shorts', feed.hide_shorts)) : null,
+        youtube ? null : switchRow(t('Always download the full text'),
           t('For feeds that only publish the beginning: the server downloads the article from the site as soon as it arrives, so it\'s ready offline too.'),
           option('full_text', feed.full_text)),
         switchRow(t('Always open on the site'),
@@ -96,6 +105,7 @@ export function openFeedSettings(feed) {
         try { await patch(`/api/feeds/${feed.id}`, { title: v }); changed = true; } catch (e) { showError(e); }
       }
       if (changed) await sourcesChanged();
+      if (shorts) reloadList();
     },
   });
 }

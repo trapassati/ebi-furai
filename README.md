@@ -42,6 +42,9 @@ The interface is in **English and Italian**, chosen from the device's language.
 - **Reading**: unread, today, starred and all articles; folders; full text of truncated articles with one tap
   (or always, per feed); reading time; pictures full screen with zoom; search across everything you have;
   articles read aloud by the device's voice.
+- **YouTube channels as feeds**: paste the address of a channel, a handle (@name), a playlist or a video; new
+  videos arrive within seconds, play in the app (from youtube-nocookie.com, only when you tap them) and the Shorts
+  can be hidden channel by channel.
 - **Read later**: save any page from the browser (a bookmarklet) or from the iPhone's share button (a Shortcut);
   its text is kept in its own collection, offline too.
 - **Made for touch**: swipe to star or mark as read, pull to refresh, mark as read while scrolling,

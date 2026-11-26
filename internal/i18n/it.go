@@ -137,5 +137,6 @@ var it = map[string]string{
 	"you are already subscribed to this feed":         "sei già iscritto a questo feed",
 	"you cannot delete yourself":                      "non puoi eliminare te stesso",
 	"you cannot disable yourself":                     "non puoi disattivare te stesso",
-	"You've read everything, no articles waiting":     "Hai letto tutto, nessun articolo in attesa",
+	"YouTube asked to accept cookies instead of showing the channel: paste the channel address in the form youtube.com/channel/UC…": "YouTube ha chiesto di accettare i cookie invece di mostrare il canale: incolla l'indirizzo del canale nella forma youtube.com/channel/UC…",
+	"You've read everything, no articles waiting": "Hai letto tutto, nessun articolo in attesa",
 }

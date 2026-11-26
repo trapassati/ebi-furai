@@ -2,6 +2,17 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+- **YouTube channels as feeds**: the address of a channel (`/channel/UC…`, `@name`, `/c/…`, `/user/…`), of a
+  playlist or of a video becomes the channel's (or playlist's) feed, without the cookie page YouTube shows from
+  the EU. New videos arrive within seconds (YouTube's feeds use a WebSub hub).
+- **Videos read well**: the thumbnail, large in the list with a play sign ("Shorts" on the short ones), and the
+  description with its links as the article, in Reeder too. In the app the video plays inside the article: the
+  player is loaded from youtube-nocookie.com only when you tap it. "Watch on YouTube" opens it in the YouTube app.
+- **Hide Shorts** (feed settings of a YouTube channel): the Shorts no longer show in the lists, in the counters or in
+  Reeder, the ones already there too; turned off, they come back as read.
+
 ## 1.9.0
 
 - **Real time page for administrators** (Settings › Administration): whether instant updates work, the public

@@ -12,6 +12,7 @@ import * as sounds from '../sounds.js';
 import { enableImageViewer } from './imageviewer.js';
 import { sourceLabel } from './list.js';
 import { startListening, stopListening, supported as canListen } from './listen.js';
+import { dropLeadingThumb, playerBlock, videoOf } from '../youtube.js';
 
 let ctx;
 let navDir = 0; // +1 next, -1 previous: direction of the content animation
@@ -103,7 +104,7 @@ export async function showArticle(id) {
     // server has not got it yet, ask for it now (quietly: on failure the
     // feed's text stays).
     const feed = findFeed(a.feed_id);
-    const wantsFull = !!(feed && feed.feed.full_text && a.url);
+    const wantsFull = !!(feed && feed.feed.full_text && a.url && !videoOf(a.url));
     if (wantsFull && a.has_full) showFull = true;
     render();
     if (wantsFull && !a.has_full) toggleFull(true);
@@ -153,13 +154,18 @@ function render() {
     title,
     meta);
 
+  // A YouTube video: the player first, in place of the feed's thumbnail.
+  const video = videoOf(a.url);
+  if (video) wrap.append(playerBlock(a, video));
+
   const body = h('div', { class: 'article-body' });
   const html = showFull ? a.full_content : a.content;
   if (html) {
     body.innerHTML = html; // sanitized server-side; CSP blocks scripts
+    if (video && !showFull) dropLeadingThumb(body, video);
     body.querySelectorAll('img').forEach((img) => img.addEventListener('error', () => img.remove(), { once: true }));
     enableImageViewer(body);
-  } else {
+  } else if (!video) {
     body.append(h('p', { class: 'text-muted', text: t('The feed doesn\'t include the content of this article.') }));
     if (a.url) body.append(h('button', { class: 'btn btn-plain mt-2', onclick: toggleFull, text: t('Load the full text') }));
   }
@@ -181,7 +187,8 @@ function updateToolbar() {
   btnStar.setAttribute('aria-label', a.starred ? t('Remove from starred') : t('Add to starred'));
   clear(btnFull).append(icon(loadingFull ? 'o-arrow-path' : 'o-document-text', loadingFull ? 'spin' : ''));
   btnFull.classList.toggle('on', showFull);
-  btnFull.disabled = !a.url;
+  // A video has no text to download from its page.
+  btnFull.disabled = !a.url || (!!videoOf(a.url) && !showFull);
 }
 
 function updateNav() {
@@ -242,7 +249,7 @@ async function toggleStar() {
 // quiet: started by itself (feed option), so errors are not shown.
 async function toggleFull(quiet) {
   const a = state.article;
-  if (!a || loadingFull) return;
+  if (!a || loadingFull || (videoOf(a.url) && !showFull)) return;
   if (showFull) {
     showFull = false;
     render();
