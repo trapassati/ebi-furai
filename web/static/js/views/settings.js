@@ -29,6 +29,7 @@ import { readingControls } from './settings/reading.js';
 import { adControls } from './settings/adfilter.js';
 import { backupControls } from './settings/backups.js';
 import { websubControls } from './settings/websub.js';
+import { statsControls } from './settings/stats.js';
 import { changePassword, exportOPML, logout, twoFactorRow } from './settings/account.js';
 import { createUser, loadUsers } from './settings/admin.js';
 
@@ -91,6 +92,7 @@ export function openSettings(ctx) {
         rowButton('o-arrow-up-tray', 'mint', t('Import OPML'), () => fileInput.click()),
         rowButton('o-arrow-down-tray', 'sunset', t('Export OPML'), exportOPML)),
       fileInput] },
+    { id: 'stats', group: 'sources', label: t('Statistics'), icon: 'o-chart-bar', tone: 'mint', body: () => [statsControls()] },
     { id: 'apps', group: 'sources', label: t('Apps and integrations'), icon: 'o-squares-2x2', tone: 'indigo', body: () => [
       h('div', { class: 'group' },
         rowButton('o-squares-2x2', 'sunset', t('Reeder and other apps'), openApps),

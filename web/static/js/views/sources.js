@@ -13,9 +13,15 @@ import { openFeedSettings } from './feedsettings.js';
 import { saveDialog } from './saved.js';
 import { status as offlineStatus } from '../offline/index.js';
 import * as motion from '../motion.js';
+import { sortable } from '../sortable.js';
 
 let ctx;
 let content;
+let scroller;
+// Edit mode of the folders: only the folders, with handles to move them.
+let reordering = false;
+let sorter = null;
+let renderLater = false;
 let firstRender = true;
 // What the previous render showed, to animate the differences.
 let prevNums = new Map(); // deck source -> count
@@ -40,7 +46,7 @@ export function mountSources(pane, context) {
     const row = e.target.closest('.feed-row');
     if (row && e.target === row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); row.click(); }
   });
-  const scroller = h('div', { class: 'pane-scroll' }, h('div', { class: 'safe-x' }, content));
+  scroller = h('div', { class: 'pane-scroll' }, h('div', { class: 'safe-x' }, content));
   pane.append(bar, scroller);
   collapsingTitle(scroller, smallTitle, () => 44);
   pullToRefresh(scroller, () => ctx.refreshAll());
@@ -200,9 +206,37 @@ function folderRow(folder, max) {
 
 export function renderSources() {
   if (!content) return;
+  // New counts while a folder is being dragged: drawn when it is dropped.
+  if (sorter && sorter.busy()) { renderLater = true; return; }
   const s = state.sources;
+  // The home is drawn again from scratch: taking out the element that has
+  // the focus (the chevron just tapped to open a folder) makes the browser
+  // jump to the top. Position and focus are put back afterwards.
+  const keepY = scroller.clientHeight > 0 ? scroller.scrollTop : null;
+  const active = document.activeElement;
+  const focusKey = active && content.contains(active) ? focusPath(active) : null;
   clear(content);
   if (!s) return;
+  draw(s);
+  if (focusKey) refocus(focusKey);
+  if (keepY !== null && Math.abs(scroller.scrollTop - keepY) > 1) motion.scrollTop(scroller, keepY);
+}
+
+// focusPath names the focused element by its row and its place in it, to
+// find the same element after a redraw.
+function focusPath(el) {
+  const row = el.closest('[data-key]');
+  if (!row) return null;
+  return { key: row.dataset.key, self: el === row, idx: [...row.querySelectorAll('button')].indexOf(el) };
+}
+function refocus({ key, self, idx }) {
+  const row = content.querySelector(`[data-key="${CSS.escape(key)}"]`);
+  if (!row) return;
+  const el = self ? row : row.querySelectorAll('button')[idx];
+  if (el) el.focus({ preventScroll: true });
+}
+
+function draw(s) {
   const deck = h('div', { class: 'deck' },
     deckCard('unread', 'o-inbox', 'sky', t('Unread'), s.unread, plural(s.unread, t('article to read'), t('articles to read'))),
     deckCard('today', 'o-calendar-days', 'aurora', t('Today'), s.today, plural(s.today, t('new to read|one'), t('new to read'))),
@@ -219,6 +253,11 @@ export function renderSources() {
   if (s.folders.length || s.feeds.length) {
     const all = s.feeds.concat(...s.folders.map((f) => f.feeds));
     const max = Math.max(1, ...s.folders.map((f) => f.unread), ...all.map((f) => f.unread));
+    if (reordering && s.folders.length) {
+      content.append(reorderList(s.folders));
+      finishDraw(deck);
+      return;
+    }
     content.append(h('div', { class: 'section-title' }, t('Feeds'), h('small', { text: plural(all.length, t('source'), t('sources')) })));
     // Feeds that keep failing are shown in one place, with what to do.
     const failing = all.filter((f) => f.error_count > 0).length;
@@ -239,6 +278,10 @@ export function renderSources() {
       h('p', { class: 'text-muted mb-6', text: t('Add the first one from its address, or import an OPML file from the settings.') }),
       h('button', { class: 'btn btn-primary', onclick: addFeedDialog }, icon('o-plus', 'w-5 h-5'), t('Add feed'))));
   }
+  finishDraw(deck);
+}
+
+function finishDraw(deck) {
   const rowKeys = new Set();
   content.querySelectorAll('[data-key]').forEach((el) => rowKeys.add(el.dataset.key));
   if (firstRender) {
@@ -268,6 +311,65 @@ export function renderSources() {
   }));
   prevKeys = rowKeys;
   window.dispatchEvent(new Event('sources:rendered'));
+}
+
+// ---- reordering the folders ----
+
+function reorderList(folders) {
+  const done = h('button', { class: 'reorder-done', onclick: stopReorder, text: t('Done') });
+  const list = h('div', { class: 'feed-rows reorder' });
+  folders.forEach((f) => {
+    const row = h('div', { class: 'feed-row reorder-row', dataset: { id: String(f.id), key: 'folder:' + f.id } },
+      tile('o-folder', 'aurora'),
+      h('div', { class: 'flex-1 min-w-0' },
+        h('div', { class: 'name truncate', text: f.name }),
+        h('div', { class: 'meta mt-0.5', text: plural(f.feeds.length, t('feed|one'), t('feeds|lower')) })),
+      h('button', { class: 'drag-handle', 'aria-label': t('Move "{0}" (arrows up and down)', f.name) }, icon('o-bars-3')));
+    list.append(row);
+  });
+  sorter = sortable(list, {
+    scroller, rowSelector: '.reorder-row', handleSelector: '.drag-handle',
+    onDrop: saveOrder,
+  });
+  const wrap = h('div', { class: 'reorder-wrap' },
+    h('div', { class: 'section-title' }, t('Folders'), done),
+    h('p', { class: 'reorder-hint', text: t('Drag ≡ to change the order of the folders in the home.') }),
+    list);
+  return wrap;
+}
+
+async function saveOrder(ids) {
+  const s = state.sources;
+  const byId = new Map(s.folders.map((f) => [String(f.id), f]));
+  s.folders = ids.map((id) => byId.get(id)).filter(Boolean).concat(s.folders.filter((f) => !ids.includes(String(f.id))));
+  try {
+    await put('/api/folders/order', { ids: ids.map(Number) });
+  } catch (e) {
+    showError(e);
+    await ctx.afterSourcesChanged();
+  }
+  if (renderLater) { renderLater = false; renderSources(); }
+}
+
+function startReorder() {
+  reordering = true;
+  renderSources();
+  // The folders' title just under the glass bar.
+  const wrap = content.querySelector('.reorder-wrap');
+  const bar = scroller.parentElement.querySelector('.bar');
+  if (wrap && scroller.clientHeight) {
+    const top = scroller.getBoundingClientRect().top;
+    const under = bar ? bar.getBoundingClientRect().bottom - top : 0;
+    motion.scrollTo(scroller, scroller.scrollTop + wrap.getBoundingClientRect().top - top - under + 4);
+  }
+  motion.stagger(content.querySelectorAll('.reorder-row'), { y: 8 });
+}
+
+function stopReorder() {
+  reordering = false;
+  sorter = null;
+  renderSources();
+  if (renderLater) renderLater = false;
 }
 
 // ---- menus ----
@@ -522,10 +624,12 @@ export function feedMenu(feed) {
 }
 
 function folderMenu(folder) {
+  const many = state.sources && state.sources.folders.length > 1;
   actionSheet({
     title: folder.name,
     actions: [
       { label: t('Mark all as read'), icon: 'o-check-circle', onSelect: () => markSourceRead('folder:' + folder.id) },
+      many ? { label: t('Reorder folders'), icon: 'o-arrows-up-down', onSelect: startReorder } : null,
       {
         label: t('Rename'), icon: 'o-pencil-square', onSelect: async () => {
           const v = await promptDialog({ title: t('Rename folder'), value: folder.name });
@@ -547,7 +651,7 @@ function folderMenu(folder) {
           } catch (e) { showError(e); }
         },
       },
-    ],
+    ].filter(Boolean),
   });
 }
 
