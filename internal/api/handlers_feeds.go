@@ -53,6 +53,25 @@ func (s *Server) handleCreateFolder(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, map[string]any{"id": id, "name": name})
 }
 
+// handleFolderOrder saves the order of the folders in the home.
+func (s *Server) handleFolderOrder(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		IDs []int64 `json:"ids"`
+	}
+	if !readJSON(w, r, &req) {
+		return
+	}
+	if len(req.IDs) > 10000 {
+		writeError(w, http.StatusBadRequest, "too many folders")
+		return
+	}
+	if err := s.store.SetFolderOrder(userID(r), req.IDs); err != nil {
+		storeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
+}
+
 func (s *Server) handleUpdateFolder(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {

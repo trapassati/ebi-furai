@@ -195,6 +195,53 @@ func (s *Store) SetFolderPosition(userID, id int64, pos int) error {
 	return execOne(s.DB, `UPDATE folders SET position = ? WHERE id = ? AND user_id = ?`, pos, id, userID)
 }
 
+// SetFolderOrder puts the user's folders in the given order. Ids that are
+// not the user's are ignored; folders left out (made on another device in
+// the meantime) keep their order after the listed ones.
+func (s *Store) SetFolderOrder(userID int64, ids []int64) error {
+	tx, err := s.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	rows, err := tx.Query(`SELECT id FROM folders WHERE user_id = ? ORDER BY position, name COLLATE NOCASE`, userID)
+	if err != nil {
+		return err
+	}
+	var current []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return err
+		}
+		current = append(current, id)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	order := make([]int64, 0, len(current))
+	seen := map[int64]bool{}
+	for _, id := range ids {
+		if !seen[id] && slices.Contains(current, id) {
+			seen[id] = true
+			order = append(order, id)
+		}
+	}
+	for _, id := range current {
+		if !seen[id] {
+			order = append(order, id)
+		}
+	}
+	for i, id := range order {
+		if _, err := tx.Exec(`UPDATE folders SET position = ? WHERE id = ? AND user_id = ?`, i+1, id, userID); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
 // DeleteFolder removes a folder; its feeds move to the root.
 func (s *Store) DeleteFolder(userID, id int64) error {
 	return execOne(s.DB, `DELETE FROM folders WHERE id = ? AND user_id = ?`, id, userID)

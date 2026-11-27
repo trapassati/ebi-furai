@@ -130,8 +130,10 @@ func (s *Server) Routes() http.Handler {
 			r.Get("/about", s.handleAbout)
 
 			r.Get("/sources", s.handleSources)
+			r.Get("/stats", s.handleStats)
 
 			r.Post("/folders", s.handleCreateFolder)
+			r.Put("/folders/order", s.handleFolderOrder)
 			r.Patch("/folders/{id}", s.handleUpdateFolder)
 			r.Delete("/folders/{id}", s.handleDeleteFolder)
 

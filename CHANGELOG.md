@@ -2,6 +2,16 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.11.0
+
+- **Feed statistics** (Settings › Statistics): articles opened day by day over 30 or 90 days, the feeds read most
+  (opened out of what arrived), the ones that publish but are never opened and the ones with nothing new for two
+  months, with a button to unsubscribe. Opens are counted since 1.9.0: until the data covers the period the
+  suggestions wait.
+- **Reorder the folders**: "Reorder folders" in a folder's menu shows handles to drag them (or move them with the
+  arrow keys), the order is kept on every device.
+- **Opening a folder keeps your place**: the home no longer jumps to the top when a folder opens or closes.
+
 ## 1.10.1
 
 - **YouTube: one tap to play**: the article shows YouTube's own player straight away, so its play button starts the
