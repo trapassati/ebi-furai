@@ -2,7 +2,7 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 1.11.0
 
 - **Feed statistics** (Settings › Statistics): articles opened day by day over 30 or 90 days, the feeds read most
   (opened out of what arrived), the ones that publish but are never opened and the ones with nothing new for two
