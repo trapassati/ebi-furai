@@ -2,6 +2,14 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.11.2
+
+- **Everything in Settings opens as a page**: Connected devices, Two-step verification, Feed health, Keyword
+  filters, Reeder and other apps, Save for later, Update, About (and the license texts) and Keyboard shortcuts now
+  open inside the settings, one level down, like Statistics, with "‹" back to where they came from (Esc goes back
+  too). Confirmations, menus and short forms stay small windows. Opened from elsewhere (the update card, the feed
+  health notice on the home) they are windows as before.
+
 ## 1.11.1
 
 - **Settings on the iPad take the whole screen**, like the iPadOS Settings app: held sideways, the list of sections

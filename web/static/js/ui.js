@@ -248,12 +248,26 @@ export function sheetOpen() { return openSheets.length > 0; }
 export function closeTopSheet() {
   const top = openSheets[openSheets.length - 1];
   if (!top || top.modal) return !!top;
+  if (pageHost && top.el === pageHost.sheet && pageHost.back()) return true; // a page goes back one level
   top.close();
   return true;
 }
 
-// openSheet(contentEl, {wide, full}) -> {close, el}; resolves onClose.
+// A window that shows other windows as its own pages (the settings):
+// {sheet: its element, push(content) -> {close, el, done}, back() -> bool}.
+let pageHost = null;
+export function setPageHost(host) { pageHost = host; }
+
+// openSheet(contentEl, {wide, full, page}) -> {close, el, done}.
+// A full window (or one marked page) opened while the settings are the top
+// window becomes a page of the settings instead.
 export function openSheet(content, opts = {}) {
+  const topSheet = openSheets[openSheets.length - 1];
+  if ((opts.full || opts.page) && pageHost && topSheet && topSheet.el === pageHost.sheet) {
+    const page = pageHost.push(content);
+    topSheet.el.focus({ preventScroll: true }); // the button that opened it is gone
+    return page;
+  }
   const overlay = document.getElementById('overlay');
   const backdrop = h('div', { class: 'backdrop' });
   const sheet = h('div', { class: 'sheet' + (opts.wide ? ' wide' : '') + (opts.full ? ' full' : '') + (opts.cls ? ' ' + opts.cls : ''), role: 'dialog', 'aria-modal': 'true' },

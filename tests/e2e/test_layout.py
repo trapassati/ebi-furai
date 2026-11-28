@@ -127,6 +127,13 @@ def settings_pages(browser):
     pg.click(".settings-back")
     pg.wait_for_timeout(600)
     check(pg.locator(".settings-pageview").count() == 0, "and then to the list")
+    # Windows opened from a page are pages too (here Connected devices).
+    settings_page(pg, "account")
+    pg.click(".settings-pageview .row-btn:has-text('Dispositivi collegati')")
+    pg.wait_for_timeout(700)
+    check(pg.locator(".sheet").count() == 1 and pg.inner_text(".settings-head .sheet-title") == "Dispositivi collegati",
+          "Connected devices opens as a page, not a window")
+    check(pg.inner_text(".settings-back") == "Account", "and goes back to Account")
     check(not pg.errors, "no page errors")
     # iPad: side by side when held sideways, the list when upright; the
     # settings take the whole screen and the list on the left fits in it.
@@ -144,6 +151,12 @@ def settings_pages(browser):
     pg.click(".settings-up")
     pg.wait_for_timeout(500)
     check(pg.locator(".settings-page .settings-row[data-page=backup]").count() == 1, "and the way back lists it")
+    settings_page(pg, "feeds")
+    pg.click(".settings-page .row-btn:has-text('Salute dei feed')")
+    pg.wait_for_timeout(700)
+    check(pg.locator(".sheet").count() == 1 and pg.inner_text(".settings-up") == "Feed", "Feed health opens as a page of Feeds")
+    pg.click(".settings-up")
+    pg.wait_for_timeout(500)
     pg.set_viewport_size({"width": 820, "height": 1180})
     pg.wait_for_selector(".settings-list")
     check(pg.locator(".settings-nav").count() == 0, "upright: the list, like the iPhone")

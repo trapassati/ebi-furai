@@ -64,22 +64,25 @@ def desktop_layout(browser):
     check(pg.locator(".settings-page .settings-section").count() == 1, "the settings show one section at a time")
     settings_page(pg, "account")
     check(pg.locator(".settings-page :text('Cambia password')").count() == 1, "picking a section shows it")
-    # A window opened from the settings takes their place, header included.
+    # A window opened from the settings becomes one of their pages.
     pg.click(".settings-nav-item:has-text('Informazioni')")
     pg.click(".settings-page button:has-text('Informazioni su')")
     pg.wait_for_timeout(600)
     ring = "(() => { const f = document.querySelector(':focus-visible'); return f && f.tagName === 'BUTTON' ? f.textContent : ''; })()"
     check(pg.evaluate(ring) == "" and pg.evaluate("document.activeElement.classList.contains('sheet')"),
-          "a window that opens has no outlined button: the focus is on the window")
-    pg.keyboard.press("Tab")
-    check(pg.evaluate("document.activeElement.textContent").strip().startswith("Indietro"), "Tab starts from its top")
-    back = pg.locator(".sheet >> nth=-1 >> button:has-text('Indietro')")
-    box = back.bounding_box()
-    top = pg.evaluate(f"document.elementFromPoint({box['x'] + box['width'] / 2}, {box['y'] + box['height'] / 2}).closest('button')?.textContent || ''")
-    check("Indietro" in top, "nothing covers the header of the window on top")
-    back.click()
-    pg.wait_for_selector(".settings-sheet:not(.covered)")
-    check(pg.locator(".settings-nav-item.on:has-text('Informazioni')").count() == 1, "Back returns to the settings, where they were")
+          "a page that opens has no outlined button: the focus is on the window")
+    check(pg.locator(".sheet").count() == 1 and pg.locator(".settings-page .about-hero").count() == 1, "About opens inside the settings")
+    pg.keyboard.press("Escape")
+    pg.wait_for_timeout(500)
+    check(pg.locator(".settings-page :text('Informazioni su')").count() == 1, "Esc goes back one level")
+    pg.click(".settings-page button:has-text('Informazioni su')")
+    pg.wait_for_timeout(500)
+    up = pg.locator(".settings-up")
+    check(up.inner_text().strip() == "Informazioni", "the way back names the page it came from")
+    up.click()
+    pg.wait_for_timeout(500)
+    check(pg.locator(".settings-nav-item.on:has-text('Informazioni')").count() == 1 and pg.locator(".settings-pushed").count() == 0,
+          "and returns there")
     pg.keyboard.press("Escape")
     check(not pg.errors, "no page errors")
 

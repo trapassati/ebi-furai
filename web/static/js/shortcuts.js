@@ -43,7 +43,7 @@ export function showShortcuts() {
     h('div', { class: 'flex items-center h-14' },
       h('div', { class: 'flex-1 sheet-title', text: t('Keyboard shortcuts') }),
       h('button', { class: 'icon-btn on font-medium text-[1.0625rem] px-3', text: t('Done'), onclick: () => ref.s.close() })),
-    h('div', { class: 'group' }, rows)), { wide: true });
+    h('div', { class: 'group' }, rows)), { wide: true, page: true });
 }
 
 export function installShortcuts(ctx) {
