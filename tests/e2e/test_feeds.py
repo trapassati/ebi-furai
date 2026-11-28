@@ -94,7 +94,7 @@ def filters_hide_and_undo(browser):
     pg.wait_for_timeout(1200)
     check(sql("SELECT COUNT(*) FROM articles WHERE hidden_by IS NOT NULL")[0][0] == 33, "33 articles hidden")
     check(pg.locator(".sheet .row-btn:has-text('numero 1*, numero 7')").count() == 1, "the filter is listed")
-    pg.locator(".sheet button:has-text('Fine')").last.click()
+    pg.click(".settings-back:visible, .settings-up:visible")  # the filters are a page of the settings
     pg.wait_for_timeout(500)
     pg.locator(".sheet button:has-text('Fine')").last.click()
     pg.wait_for_timeout(800)

@@ -9,7 +9,7 @@
 import { t } from '../i18n.js';
 import { api } from '../api.js';
 import { state } from '../state.js';
-import { h, icon, openSheet, showError, tile, toast } from '../ui.js';
+import { h, icon, openSheet, setPageHost, showError, tile, toast } from '../ui.js';
 import * as motion from '../motion.js';
 import { canInstall, showInstallHint } from '../install.js';
 import { openAbout } from './about.js';
@@ -151,6 +151,28 @@ export function openSettings(ctx) {
   const root = h('div', { class: 'settings-root' });
   let sheet;
   let mode = '';
+  // host: how the layout on screen shows a window opened from a page.
+  let host = null;
+
+  // A window opened from a page (Feed health, Connected devices, About…)
+  // becomes a page one level down, like Statistics: its own title bar gives
+  // way to the settings' one, and "‹" goes back to the page it came from.
+  const pushWindow = (content) => {
+    const titleEl = content.querySelector('.sheet-title');
+    const label = titleEl ? titleEl.textContent : '';
+    const head = titleEl && titleEl.parentElement;
+    if (head) {
+      head.classList.add('hidden');
+      // the page already has its margins
+      for (const el of [head.parentElement, ...head.parentElement.children]) el.classList.remove('px-4', 'px-5');
+    }
+    let resolve;
+    const done = new Promise((r) => { resolve = r; });
+    const entry = { label, resolve: () => { if (!entry.closed) { entry.closed = true; resolve(); } }, closed: false,
+      el: h('div', { class: 'settings-section settings-pushed' }, h('div', { class: 'group-label', text: label }), content) };
+    host.push(entry);
+    return { el: entry.el, done, close: () => { if (!entry.closed && host) host.remove(entry); } };
+  };
 
   // ---- wide: the list on the left, a page on the right ----
   const wide = () => {
@@ -174,16 +196,34 @@ export function openSettings(ctx) {
       items.push(item);
       nav.append(item);
     }
+    // trail: the page shown and the ones below it, each {label, el}; a
+    // window opened from a page (pushed) adds one on top.
+    let trail = [];
+    const render = (dir = 1) => {
+      const topEntry = trail[trail.length - 1];
+      const under = trail[trail.length - 2];
+      // A page one level down has a way back to the one below, above its title.
+      page.replaceChildren(...(under ? [h('button', { type: 'button', class: 'icon-btn on settings-up', onclick: () => pop() },
+        icon('o-chevron-left', 'w-5 h-5 flex-none'), h('span', { class: 'truncate', text: under.label }))] : []), topEntry.el);
+      page.scrollTop = 0;
+      if (motion.enabled()) window.gsap.fromTo([...page.children], { opacity: 0, x: 10 * dir }, { opacity: 1, x: 0, duration: 0.22, ease: 'power2.out', clearProps: 'transform' });
+    };
+    const drop = (n) => { while (trail.length > n) { const e = trail.pop(); if (e.resolve) e.resolve(); } };
+    const pop = () => { if (trail.length < 2) return false; drop(trail.length - 1); render(-1); return true; };
     const show = (id) => {
       const p = byId[id];
       const top = p.parent || p;
       lastPage = id;
       items.forEach((b) => { const on = b.dataset.page === top.id; b.classList.toggle('on', on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
-      // A page one level down has a way back to its parent above its title.
-      page.replaceChildren(...(p.parent ? [h('button', { type: 'button', class: 'icon-btn on settings-up', onclick: () => show(p.parent.id) },
-        icon('o-chevron-left', 'w-5 h-5 flex-none'), h('span', { class: 'truncate', text: p.parent.label }))] : []), p.el);
-      page.scrollTop = 0;
-      if (motion.enabled()) window.gsap.fromTo([...page.children], { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out', clearProps: 'transform' });
+      drop(0);
+      trail = p.parent ? [p.parent, p] : [p];
+      render(0);
+    };
+    host = {
+      push: (entry) => { trail.push(entry); render(); },
+      remove: (entry) => { const i = trail.indexOf(entry); if (i > 0) { drop(i); render(-1); } },
+      back: pop,
+      clear: () => drop(trail.filter((e) => !e.resolve).length),
     };
     go = show;
     nav.append(h('div', { class: 'flex-1' }), version());
@@ -219,12 +259,13 @@ export function openSettings(ctx) {
       if (n > 1) fade(backLabel, labels[n - 2]);
       back.classList.toggle('invisible', n === 1);
     };
-    const open = (id) => {
-      if (busy) return;
-      const p = byId[id];
+    // entries[i]: what views[i] shows ({label, el, resolve} for a window
+    // opened from a page).
+    const entries = [null];
+    const openView = (entry) => {
       const under = views[views.length - 1];
-      const view = h('div', { class: 'settings-view settings-pageview' }, h('div', { class: 'px-4 pb-8' }, p.el));
-      views.push(view); labels.push(p.label);
+      const view = h('div', { class: 'settings-view settings-pageview' }, h('div', { class: 'px-4 pb-8' }, entry.el));
+      views.push(view); labels.push(entry.label); entries.push(entry);
       stack.append(view);
       heads();
       if (gsap) {
@@ -234,11 +275,14 @@ export function openSettings(ctx) {
         if (views.length === 2) gsap.fromTo(back, { opacity: 0, x: 12 }, { opacity: 1, x: 0, duration: 0.3, delay: 0.08 });
       } else under.classList.add('hidden');
     };
+    const open = (id) => { if (!busy) openView(byId[id]); };
     go = open;
     // close: back one level, from where a swipe left the page (0..1).
     const close = (from = 0) => {
       if (views.length < 2) return;
       const view = views.pop(); labels.pop();
+      const entry = entries.pop();
+      if (entry && entry.resolve) entry.resolve();
       const under = views[views.length - 1];
       under.classList.remove('hidden');
       heads();
@@ -250,6 +294,12 @@ export function openSettings(ctx) {
       } else done();
     };
     back.addEventListener('click', () => close());
+    host = {
+      push: openView,
+      remove: (entry) => { const i = entries.indexOf(entry); if (i > 0) while (entries.length > i) close(); },
+      back: () => { if (views.length < 2) return false; close(); return true; },
+      clear: () => entries.forEach((e) => { if (e && e.resolve) e.resolve(); }),
+    };
 
     // Swipe from the left edge of the window to go back.
     let x0 = 0, y0 = 0, dx = 0, t0 = 0, track = '', width = 1;
@@ -305,15 +355,21 @@ export function openSettings(ctx) {
   const layout = () => {
     const next = sideBySide() ? 'wide' : 'narrow';
     if (next === mode) return;
+    if (host) host.clear();
     mode = next;
     if (mode === 'wide') wide(); else narrow();
   };
   layout();
   sheet = openSheet(root, { full: true, wide: true, cls: 'settings-sheet' });
+  setPageHost({ sheet: sheet.el, push: pushWindow, back: () => !!host && host.back() });
   // Turning the iPad or entering Split View changes the layout.
   const onResize = () => layout();
   window.addEventListener('resize', onResize);
   document.addEventListener('deskchange', onResize);
-  sheet.done.then(() => { window.removeEventListener('resize', onResize); document.removeEventListener('deskchange', onResize); });
+  sheet.done.then(() => {
+    window.removeEventListener('resize', onResize); document.removeEventListener('deskchange', onResize);
+    setPageHost(null);
+    if (host) host.clear();
+  });
   if (admin) loadUsers(usersBox);
 }
