@@ -170,6 +170,30 @@ function openArticle(id) {
   setView('reader');
   writeHash();
   showArticle(id);
+  if (state.cols > 1) requestAnimationFrame(followSelectedRow);
+}
+
+// With the list beside the article, the list follows it (J and K, the
+// arrows of the reader): the open article's row glides into view, just as
+// far as needed, and takes the keyboard focus if a row of the list had it,
+// so the focus ring does not stay behind on another article.
+function followSelectedRow() {
+  const sc = panes.list.querySelector('.pane-scroll');
+  const row = sc && sc.querySelector(`.arow[data-id="${state.articleId}"]`);
+  if (!row || sc.clientHeight === 0) return;
+  sc.querySelectorAll('.arow.selected').forEach((r) => { if (r !== row) r.classList.remove('selected'); });
+  row.classList.add('selected');
+  const focused = document.activeElement;
+  if (focused && focused !== row && focused.classList.contains('arow') && sc.contains(focused)) row.focus({ preventScroll: true });
+  const r = row.getBoundingClientRect();
+  const box = sc.getBoundingClientRect();
+  const above = 72 * uiScale(), below = 24 * uiScale(); // clear of the floating toolbar
+  if (r.height > box.height - above - below || r.top < box.top + above) motion.scrollTo(sc, sc.scrollTop + r.top - box.top - above);
+  else if (r.bottom > box.bottom - below) motion.scrollTo(sc, sc.scrollTop + r.bottom - box.bottom + below);
+}
+
+function uiScale() {
+  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui')) || 1;
 }
 
 // from: the pane whose back button was used ('list' or 'reader').
