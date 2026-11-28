@@ -529,7 +529,9 @@ export function updateRow(id) {
   }
   const fromOpacity = parseFloat(getComputedStyle(old).opacity);
   const row = rowEl(a);
+  const focused = old.contains(document.activeElement);
   old.replaceWith(row);
+  if (focused) row.focus({ preventScroll: true }); // J and K keep the focus on the open article
   if (wasRead === !!a.read && wasStarred === !!a.starred) return;
   motion.rowChanged(row, {
     fromOpacity: wasRead !== !!a.read ? fromOpacity : null,

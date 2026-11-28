@@ -129,5 +129,32 @@ def scrollbars_while_scrolling(browser):
     check(not pg.errors, "no page errors")
 
 
+def list_follows_the_article(browser):
+    # J and K: the ring and the keyboard focus move with the open article,
+    # and the list scrolls so that its row stays in view.
+    pg = login(context(browser, DESKTOP))
+    open_collection(pg, 3)
+    pg.locator("#pane-list .arow").first.click()
+    pg.wait_for_timeout(500)
+    state = """(() => { const sc = document.querySelector('#pane-list .pane-scroll');
+      const sel = [...sc.querySelectorAll('.arow.selected')].map((r) => r.dataset.id);
+      const row = sc.querySelector('.arow.selected'), r = row.getBoundingClientRect(), b = sc.getBoundingClientRect();
+      return { sel, focus: document.activeElement.dataset.id || null, inView: r.top >= b.top && r.bottom <= b.bottom }; })()"""
+    for _ in range(12):
+        pg.keyboard.press("j")
+        pg.wait_for_timeout(250)
+    pg.wait_for_timeout(900)
+    st = pg.evaluate(state)
+    check(len(st["sel"]) == 1 and st["focus"] == st["sel"][0], f"one ring, and the focus on it ({st})")
+    check(st["inView"], "the list scrolled down with the article")
+    for _ in range(10):
+        pg.keyboard.press("k")
+        pg.wait_for_timeout(250)
+    pg.wait_for_timeout(900)
+    st = pg.evaluate(state)
+    check(len(st["sel"]) == 1 and st["focus"] == st["sel"][0] and st["inView"], f"and back up with K ({st})")
+    check(not pg.errors, "no page errors")
+
+
 if __name__ == "__main__":
-    run(desktop_layout, empty_states_line_up, touch_keeps_its_interface, scrollbars_while_scrolling)
+    run(desktop_layout, empty_states_line_up, touch_keeps_its_interface, scrollbars_while_scrolling, list_follows_the_article)

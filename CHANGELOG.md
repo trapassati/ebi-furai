@@ -2,6 +2,18 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.11.1
+
+- **Settings on the iPad take the whole screen**, like the iPadOS Settings app: held sideways, the list of sections
+  is a sidebar as tall as the screen and every section fits in it.
+- **Fewer sections in Settings**: Sounds is now part of Appearance, Statistics opens from Feeds, and Users, Backup,
+  Ad filter and Real time are grouped under Administration. Pages one level down have a way back to their parent.
+- **Settings read better in the dark theme**: the sidebar, the boxes and the background each have their own shade,
+  boxes have a thin edge, and the chosen option of a segmented control is lighter than its track, not darker.
+- **The list follows the open article** (desktop and iPad with columns): with J and K the ring and the keyboard
+  focus move to the open article (the focus ring no longer stays on the first one), its ring is visible again, and
+  the list scrolls just enough to keep it in view.
+
 ## 1.11.0
 
 - **Feed statistics** (Settings › Statistics): articles opened day by day over 30 or 90 days, the feeds read most
