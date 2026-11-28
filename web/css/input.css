@@ -1232,10 +1232,48 @@ html.desk body {
 .settings-page { flex: 1; min-width: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 calc(28px * var(--ui)) calc(28px * var(--ui)); }
 .settings-page .settings-section > .group-label:first-child { font-size: 1.25rem; font-weight: 700; padding-top: calc(8px * var(--ui)); }
 .desk .sheet .group > .row-btn, .desk .settings-page .group > .row-btn { font-size: 0.9375rem; padding-top: calc(6px * var(--ui)); padding-bottom: calc(6px * var(--ui)); min-height: calc(38px * var(--ui)); }
-/* iPad held sideways: the same, sized for a finger */
-html:not(.desk) .sheet.settings-sheet:has(.settings-root.wide) { width: min(calc(980px * var(--ui)), 94vw); }
-html:not(.desk) .settings-nav { width: calc(280px * var(--ui)); margin-bottom: calc(14px * var(--ui)); margin-left: calc(14px * var(--ui)); }
+/* iPad: the whole screen, as the Settings app of iPadOS (held sideways,
+   the list in a sidebar as tall as the screen), sized for a finger */
+@media (min-width: 640px) {
+  html:not(.desk) .sheet.full.settings-sheet {
+    top: 0; bottom: 0; left: 0; right: 0; width: auto; height: auto; max-height: none; margin: 0; border-radius: 0; box-shadow: none;
+    padding: var(--safe-top) var(--safe-right) 0 var(--safe-left);
+  }
+  html:not(.desk) .settings-sheet .settings-page { padding-bottom: calc(var(--safe-bottom) + calc(28px * var(--ui))); }
+}
+html:not(.desk) .settings-nav { width: calc(300px * var(--ui)); margin-bottom: calc(var(--safe-bottom) + calc(14px * var(--ui))); margin-left: calc(14px * var(--ui)); }
 html:not(.desk) .settings-nav-item { min-height: calc(46px * var(--ui)); font-size: 1.0625rem; border-radius: calc(13px * var(--ui)); }
+/* a page one level down (Statistics, the administrator's pages): the way
+   back to its parent, above its title */
+.settings-up { gap: calc(2px * var(--ui)); margin: calc(8px * var(--ui)) 0 0 calc(-6px * var(--ui)); padding: 0 calc(8px * var(--ui)) 0 calc(2px * var(--ui)); font-size: 1.0625rem; font-weight: 500; max-width: 100%; }
+.settings-up + .settings-section > .group-label:first-child { padding-top: calc(4px * var(--ui)); }
+.desk .settings-up { font-size: 0.9375rem; }
+
+/* settings in the dark: one clear step between the window, the sidebar,
+   the boxes and the chosen segment (the accent stays the same). The
+   window keeps the app's background; on the desktop it is solid enough
+   not to mix with the app behind it. */
+[data-theme="dark"] .settings-sheet {
+  --c-raise: #1c2648;   /* boxes: 1.28:1 on the window (was 1.14) */
+  --c-raise-2: #1c2648; /* tracks and fields, as the boxes */
+  --c-line: #2f3b66;
+  --s-nav: #141c35;     /* the sidebar */
+  --s-on: #35447a;      /* the chosen segment: lighter than its track */
+  --s-edge: rgb(255 255 255 / 0.07);
+}
+[data-theme="dark"] .settings-sheet :is(.group, .size-box) { box-shadow: inset 0 0 0 1px var(--s-edge), var(--shadow-card); }
+[data-theme="dark"] .settings-sheet .settings-nav { background: var(--s-nav); box-shadow: inset 0 0 0 1px var(--s-edge); }
+[data-theme="dark"] .settings-sheet .settings-nav-item.on { background: color-mix(in srgb, var(--c-accent) 26%, var(--s-nav)); }
+[data-theme="dark"] .settings-sheet .segmented { box-shadow: inset 0 0 0 1px var(--s-edge); }
+[data-theme="dark"] .settings-sheet .segmented button { color: var(--c-soft); }
+[data-theme="dark"] .settings-sheet .segmented button.on { background: var(--s-on); color: var(--c-fg); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), 0 calc(2px * var(--ui)) calc(8px * var(--ui)) calc(-2px * var(--ui)) rgb(0 0 0 / 0.5); }
+[data-theme="dark"] .settings-sheet .btn-plain { background: var(--s-on); }
+[data-theme="dark"] .settings-sheet .field { border-color: var(--c-line); }
+[data-theme="dark"] .settings-sheet .field:focus { border-color: var(--c-accent); }
+[data-theme="dark"] .settings-sheet .tile-plain { background: #2a3560; }
+html.desk[data-theme="dark"] .sheet.settings-sheet { background: rgb(11 16 32 / 0.97); box-shadow: inset 0 1px 0 var(--glass-rim), inset 0 0 0 1px rgb(255 255 255 / 0.12), var(--dk-shadow); }
+html.desk[data-theme="dark"] .backdrop:has(+ .settings-sheet) { background: rgb(3 5 12 / 0.55); }
+
 /* tablets: a full-height window stays clear of the status bar and the
    floating controls at the top and bottom of the screen */
 @media (min-width: 640px) {

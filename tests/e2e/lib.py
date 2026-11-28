@@ -112,8 +112,20 @@ def run(*tests):
     sys.exit(1 if failed else 0)
 
 
+# Pages that live inside another one: sounds in Appearance, statistics in
+# Feeds, the administrator's pages in Administration.
+SETTINGS_PARENT = {"sounds": "appearance", "stats": "feeds", "users": "admin",
+                   "backup": "admin", "ads": "admin", "websub": "admin"}
+
+
 def settings_page(pg, page):
     """Opens a page of the open Settings window: from the list on the left
-    (wide windows) or from the list that slides away (narrow ones)."""
-    pg.click(f".settings-nav-item[data-page={page}], .settings-list [data-page={page}]")
+    (wide windows) or from the list that slides away (narrow ones), going
+    through its parent page when it has one."""
+    parent = SETTINGS_PARENT.get(page)
+    first = parent or page
+    pg.click(f".settings-nav-item[data-page={first}], .settings-list [data-page={first}]")
     pg.wait_for_timeout(600)
+    if parent and page != "sounds":
+        pg.locator(f".settings-sheet .settings-section .settings-row[data-page={page}]").last.click()
+        pg.wait_for_timeout(600)

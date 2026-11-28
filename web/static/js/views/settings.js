@@ -66,6 +66,16 @@ export function openSettings(ctx) {
   const desktopKeys = window.matchMedia('(hover: hover) and (pointer: fine)').matches || navigator.keyboard;
 
   // The pages, in the order of the list; group puts them in the same box.
+  // A page with children lists them as rows and opens them one level down.
+  const stats = { id: 'stats', label: t('Statistics'), icon: 'o-chart-bar', tone: 'mint', body: () => [statsControls()] };
+  const adminPages = admin ? [
+    { id: 'users', label: t('Users'), icon: 'o-users', tone: 'indigo', body: () => [usersBox,
+      h('button', { class: 'btn btn-primary w-full mt-4', onclick: () => createUser(usersBox) }, icon('o-user-plus', 'w-5 h-5'), t('New user'))] },
+    { id: 'backup', label: 'Backup', icon: 'o-circle-stack', tone: 'mint', body: () => [backupControls()] },
+    { id: 'ads', label: t('Ad filter'), icon: 'o-no-symbol', tone: 'sunset', body: () => [adControls(true)] },
+    { id: 'websub', label: t('Real time'), icon: 'o-bolt', tone: 'sunset', body: () => [websubControls()] },
+  ] : [];
+  const childRows = (list) => h('div', { class: 'group' }, ...list.map((c) => pageRow(c, () => go(c.id))));
   const pages = [
     { id: 'account', group: 'me', label: 'Account', icon: 'o-user-circle', tone: 'indigo', body: () => [
       h('div', { class: 'group' },
@@ -74,63 +84,62 @@ export function openSettings(ctx) {
         rowButton('o-device-phone-mobile', 'indigo', t('Connected devices'), openSessions)),
       h('div', { class: 'group mt-6' },
         rowButton('o-arrow-right-start-on-rectangle', 'rose', t('Sign out'), logout, 'text-danger'))] },
-    { id: 'appearance', group: 'device', label: t('Appearance'), icon: 'o-swatch', tone: 'aurora', body: () => [appearanceControls()] },
-    { id: 'sounds', group: 'device', label: t('Sounds'), icon: 'o-speaker-wave', tone: 'rose', body: () => [
-      h('div', { class: 'flex flex-col gap-3' }, note(t('They only apply to this device.')), soundControls())] },
+    { id: 'appearance', group: 'device', label: t('Appearance'), icon: 'o-swatch', tone: 'aurora', body: () => [
+      appearanceControls(),
+      subLabel(t('Sounds')),
+      h('div', { class: 'flex flex-col gap-3 settings-sounds' }, note(t('They only apply to this device.')), soundControls())] },
     { id: 'reading', group: 'device', label: t('Reading'), icon: 'o-newspaper', tone: 'sky', body: () => [
       readingControls(),
       subLabel('Offline'), offlineControls(),
       // Administrators change the ad filter in its own page.
       admin ? null : subLabel(t('Ads')), admin ? null : adControls(false)] },
     { id: 'notifications', group: 'device', label: t('Notifications'), icon: 'o-bell', tone: 'rose', body: () => [notifyControls()] },
-    { id: 'feeds', group: 'sources', label: t('Feeds'), icon: 'o-rss', tone: 'sunset', detail: failing ? String(failing) : '', body: () => [
+    { id: 'feeds', group: 'sources', label: t('Feeds'), icon: 'o-rss', tone: 'sunset', detail: failing ? String(failing) : '', children: [stats], body: () => [
       h('div', { class: 'group' },
         rowButton('o-exclamation-triangle', failing ? 'rose' : 'mint',
           failing ? t('Feed health: {0} with problems', failing) : t('Feed health'), openFeedHealth),
+        pageRow(stats, () => go('stats')),
         rowButton('o-funnel', 'indigo', t('Keyword filters'), () => openFilters())),
       h('div', { class: 'group mt-6' },
         rowButton('o-arrow-up-tray', 'mint', t('Import OPML'), () => fileInput.click()),
         rowButton('o-arrow-down-tray', 'sunset', t('Export OPML'), exportOPML)),
       fileInput] },
-    { id: 'stats', group: 'sources', label: t('Statistics'), icon: 'o-chart-bar', tone: 'mint', body: () => [statsControls()] },
     { id: 'apps', group: 'sources', label: t('Apps and integrations'), icon: 'o-squares-2x2', tone: 'indigo', body: () => [
       h('div', { class: 'group' },
         rowButton('o-squares-2x2', 'sunset', t('Reeder and other apps'), openApps),
         rowButton('o-bookmark', 'rose', t('Save for later'), openSaveHelp),
         canInstall() ? rowButton('o-plus', 'indigo', t('Add to Home Screen'), () => { sheet.close(); setTimeout(showInstallHint, 350); }) : null)] },
-    admin ? { id: 'users', group: 'admin', label: t('Users'), icon: 'o-users', tone: 'indigo', body: () => [usersBox,
-      h('button', { class: 'btn btn-primary w-full mt-4', onclick: () => createUser(usersBox) }, icon('o-user-plus', 'w-5 h-5'), t('New user'))] } : null,
-    admin ? { id: 'backup', group: 'admin', label: 'Backup', icon: 'o-circle-stack', tone: 'mint', body: () => [backupControls()] } : null,
-    admin ? { id: 'ads', group: 'admin', label: t('Ad filter'), icon: 'o-no-symbol', tone: 'sunset', body: () => [adControls(true)] } : null,
-    admin ? { id: 'websub', group: 'admin', label: t('Real time'), icon: 'o-bolt', tone: 'sunset', body: () => [websubControls()] } : null,
+    admin ? { id: 'admin', group: 'admin', label: t('Administration'), icon: 'o-shield-check', tone: 'mint', children: adminPages, body: () => [childRows(adminPages)] } : null,
     { id: 'about', group: 'about', label: t('About'), icon: 'o-information-circle', tone: 'plain', detail: state.update ? '1' : '', body: () => [
       h('div', { class: 'group' },
         desktopKeys ? rowButton('o-command-line', 'plain', t('Keyboard shortcuts'), showShortcuts) : null,
         state.update ? rowButton('o-sparkles', 'aurora', t('Update available: {0}', state.update.latest), () => openUpdate(state.update)) : null,
         rowButton('o-information-circle', 'plain', t('About Ebi Furai'), openAbout))] },
   ].filter(Boolean);
+  for (const p of pages) for (const c of p.children || []) c.parent = p;
+  const all = pages.flatMap((p) => [p, ...(p.children || [])]);
+  // go(id) opens a page in the layout on screen (set by wide and narrow).
+  let go = () => {};
   // Each page is built once and moved between the layouts.
-  for (const p of pages) p.el = section(p.label, p.icon, p.tone, ...p.body());
-  const byId = Object.fromEntries(pages.map((p) => [p.id, p]));
-  const groupLabel = { admin: t('Administration') };
+  for (const p of all) p.el = section(p.label, p.icon, p.tone, ...p.body());
+  const byId = Object.fromEntries(all.map((p) => [p.id, p]));
   const version = () => h('div', { class: 'text-center text-[0.75rem] text-muted pt-8', text: t('{0}, version {1}', me.app_name, me.version) });
   const role = me.user.is_admin ? t('Administrator') : t('User');
 
   // The list of pages grouped in boxes, with the account on top (narrow).
-  const pageList = (open) => {
+  const pageList = () => {
     const boxes = [];
     let box = null, group = '';
     for (const p of pages) {
       if (p.id === 'account') continue;
       if (p.group !== group) {
         group = p.group;
-        if (groupLabel[group]) boxes.push(subLabel(groupLabel[group]));
-        box = h('div', { class: 'group' + (groupLabel[group] ? '' : ' mt-6') });
+        box = h('div', { class: 'group mt-6' });
         boxes.push(box);
       }
-      box.append(pageRow(p, () => open(p.id)));
+      box.append(pageRow(p, () => go(p.id)));
     }
-    const card = h('button', { class: 'row-btn settings-me px-3 py-3', dataset: { page: 'account' }, onclick: () => open('account') },
+    const card = h('button', { class: 'row-btn settings-me px-3 py-3', dataset: { page: 'account' }, onclick: () => go('account') },
       tile('o-user-circle', 'aurora'),
       h('span', { class: 'flex-1 min-w-0 text-left' },
         h('span', { class: 'block text-[1.0625rem] font-semibold truncate', text: me.user.username }),
@@ -155,7 +164,7 @@ export function openSettings(ctx) {
     let group = '';
     for (const p of pages) {
       if (p.group !== group) {
-        if (group) nav.append(groupLabel[p.group] ? h('div', { class: 'settings-nav-label', text: groupLabel[p.group] }) : h('div', { class: 'settings-nav-gap' }));
+        if (group) nav.append(h('div', { class: 'settings-nav-gap' }));
         group = p.group;
       }
       const item = h('button', { type: 'button', class: 'settings-nav-item', dataset: { page: p.id }, onclick: () => show(p.id) },
@@ -166,70 +175,88 @@ export function openSettings(ctx) {
       nav.append(item);
     }
     const show = (id) => {
+      const p = byId[id];
+      const top = p.parent || p;
       lastPage = id;
-      items.forEach((b) => { const on = b.dataset.page === id; b.classList.toggle('on', on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
-      page.replaceChildren(byId[id].el);
+      items.forEach((b) => { const on = b.dataset.page === top.id; b.classList.toggle('on', on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
+      // A page one level down has a way back to its parent above its title.
+      page.replaceChildren(...(p.parent ? [h('button', { type: 'button', class: 'icon-btn on settings-up', onclick: () => show(p.parent.id) },
+        icon('o-chevron-left', 'w-5 h-5 flex-none'), h('span', { class: 'truncate', text: p.parent.label }))] : []), p.el);
       page.scrollTop = 0;
-      if (motion.enabled()) window.gsap.fromTo(byId[id].el, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out', clearProps: 'transform' });
+      if (motion.enabled()) window.gsap.fromTo([...page.children], { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out', clearProps: 'transform' });
     };
+    go = show;
     nav.append(h('div', { class: 'flex-1' }), version());
     root.className = 'settings-root wide';
     root.replaceChildren(header, h('div', { class: 'settings-split' }, nav, page));
     show(byId[lastPage] ? lastPage : 'appearance');
   };
 
-  // ---- narrow: the list, and a page slides in over it ----
+  // ---- narrow: the list, and pages slide in over it, one per level ----
   const narrow = () => {
+    const backLabel = h('span', { class: 'truncate', text: t('Settings') });
     const back = h('button', { class: 'icon-btn on justify-self-start min-w-0 max-w-full font-medium text-[1.0625rem] settings-back invisible', type: 'button', 'aria-label': t('Back') },
-      icon('o-chevron-left', 'w-5 h-5 flex-none'), h('span', { class: 'truncate', text: t('Settings') }));
+      icon('o-chevron-left', 'w-5 h-5 flex-none'), backLabel);
     const title = h('div', { class: 'text-center sheet-title truncate min-w-0', text: t('Settings') });
     const header = h('div', { class: 'settings-bar px-2 h-14 bg-bg z-10 settings-head' },
       back, title,
       h('button', { class: 'icon-btn on justify-self-end pr-2 font-semibold text-[1.0625rem]', onclick: () => sheet.close(), text: t('Done') }));
     const stack = h('div', { class: 'settings-stack' });
     const listView = h('div', { class: 'settings-view' });
-    const pageView = h('div', { class: 'settings-view settings-pageview hidden' });
-    let current = null;
+    // views: the list, then one view per open page; labels: their titles.
+    const views = [listView];
+    const labels = [t('Settings')];
+    let busy = false;
     const gsap = motion.enabled() ? window.gsap : null;
 
-    const setTitle = (text) => {
-      if (!gsap) { title.textContent = text; return; }
-      gsap.to(title, { opacity: 0, duration: 0.1, ease: 'none', onComplete: () => { title.textContent = text; gsap.to(title, { opacity: 1, duration: 0.18, ease: 'none' }); } });
+    const fade = (el, text) => {
+      if (!gsap) { el.textContent = text; return; }
+      gsap.to(el, { opacity: 0, duration: 0.1, ease: 'none', onComplete: () => { el.textContent = text; gsap.to(el, { opacity: 1, duration: 0.18, ease: 'none' }); } });
+    };
+    const heads = () => {
+      const n = views.length;
+      fade(title, labels[n - 1]);
+      if (n > 1) fade(backLabel, labels[n - 2]);
+      back.classList.toggle('invisible', n === 1);
     };
     const open = (id) => {
-      if (current) return;
-      current = id;
-      pageView.replaceChildren(h('div', { class: 'px-4 pb-8' }, byId[id].el));
-      pageView.scrollTop = 0;
-      pageView.classList.remove('hidden');
-      back.classList.remove('invisible');
-      setTitle(byId[id].label);
+      if (busy) return;
+      const p = byId[id];
+      const under = views[views.length - 1];
+      const view = h('div', { class: 'settings-view settings-pageview' }, h('div', { class: 'px-4 pb-8' }, p.el));
+      views.push(view); labels.push(p.label);
+      stack.append(view);
+      heads();
       if (gsap) {
-        gsap.fromTo(pageView, { xPercent: 100 }, { xPercent: 0, duration: 0.42, ease: 'power3.out' });
-        gsap.fromTo(listView, { xPercent: 0, opacity: 1 }, { xPercent: -28, opacity: 0.4, duration: 0.42, ease: 'power3.out' });
-        gsap.fromTo(back, { opacity: 0, x: 12 }, { opacity: 1, x: 0, duration: 0.3, delay: 0.08 });
-      } else listView.classList.add('hidden');
+        busy = true;
+        gsap.fromTo(view, { xPercent: 100 }, { xPercent: 0, duration: 0.42, ease: 'power3.out', onComplete: () => { busy = false; } });
+        gsap.fromTo(under, { xPercent: 0, opacity: 1 }, { xPercent: -28, opacity: 0.4, duration: 0.42, ease: 'power3.out', onComplete: () => under.classList.add('hidden') });
+        if (views.length === 2) gsap.fromTo(back, { opacity: 0, x: 12 }, { opacity: 1, x: 0, duration: 0.3, delay: 0.08 });
+      } else under.classList.add('hidden');
     };
-    // close: back to the list, from where a swipe left the page (0..1).
+    go = open;
+    // close: back one level, from where a swipe left the page (0..1).
     const close = (from = 0) => {
-      if (!current) return;
-      current = null;
-      setTitle(t('Settings'));
-      const done = () => { pageView.classList.add('hidden'); back.classList.add('invisible'); pageView.replaceChildren(); };
-      listView.classList.remove('hidden');
+      if (views.length < 2) return;
+      const view = views.pop(); labels.pop();
+      const under = views[views.length - 1];
+      under.classList.remove('hidden');
+      heads();
+      const done = () => view.remove();
       if (gsap) {
-        gsap.to(back, { opacity: 0, duration: 0.15 });
-        gsap.fromTo(pageView, { xPercent: from * 100 }, { xPercent: 100, duration: 0.34, ease: 'power3.out', onComplete: done });
-        gsap.fromTo(listView, { xPercent: -28 * (1 - from), opacity: 0.4 + 0.6 * from }, { xPercent: 0, opacity: 1, duration: 0.34, ease: 'power3.out', clearProps: 'transform,opacity' });
+        if (views.length === 1) gsap.to(back, { opacity: 0, duration: 0.15, clearProps: 'opacity' });
+        gsap.fromTo(view, { xPercent: from * 100 }, { xPercent: 100, duration: 0.34, ease: 'power3.out', onComplete: done });
+        gsap.fromTo(under, { xPercent: -28 * (1 - from), opacity: 0.4 + 0.6 * from }, { xPercent: 0, opacity: 1, duration: 0.34, ease: 'power3.out', clearProps: 'transform,opacity' });
       } else done();
     };
     back.addEventListener('click', () => close());
 
     // Swipe from the left edge of the window to go back.
     let x0 = 0, y0 = 0, dx = 0, t0 = 0, track = '', width = 1;
+    const pair = () => [views[views.length - 1], views[views.length - 2]];
     stack.addEventListener('touchstart', (e) => {
       track = '';
-      if (!current || e.touches.length !== 1) return;
+      if (views.length < 2 || busy || e.touches.length !== 1) return;
       const r = stack.getBoundingClientRect();
       x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
       if (x0 - r.left > 28) return;
@@ -242,31 +269,35 @@ export function openSettings(ctx) {
         if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
         if (mx <= 0 || Math.abs(my) > Math.abs(mx)) { track = ''; return; }
         track = 'swipe';
+        pair()[1].classList.remove('hidden');
       }
       if (e.cancelable) e.preventDefault();
       dx = Math.max(0, mx);
       const f = Math.min(dx / width, 1);
-      pageView.style.transform = `translateX(${dx}px)`;
-      listView.style.transform = `translateX(${-28 * (1 - f)}%)`;
-      listView.style.opacity = String(0.4 + 0.6 * f);
+      const [top, under] = pair();
+      top.style.transform = `translateX(${dx}px)`;
+      under.style.transform = `translateX(${-28 * (1 - f)}%)`;
+      under.style.opacity = String(0.4 + 0.6 * f);
     }, { passive: false });
     const end = (e) => {
       if (track !== 'swipe') { track = ''; return; }
       track = '';
       const f = Math.min(dx / width, 1);
       const fast = dx / Math.max(e.timeStamp - t0, 1) > 0.5;
-      pageView.style.transform = '';
+      const [top, under] = pair();
+      top.style.transform = '';
       if (f > 0.35 || fast) { close(f); return; }
+      const hide = () => under.classList.add('hidden');
       if (gsap) {
-        gsap.fromTo(pageView, { x: dx }, { x: 0, duration: 0.28, ease: 'power3.out', clearProps: 'transform' });
-        gsap.fromTo(listView, { xPercent: -28 * (1 - f), opacity: 0.4 + 0.6 * f }, { xPercent: -28, opacity: 0.4, duration: 0.28, ease: 'power3.out' });
-      } else { listView.style.transform = ''; listView.style.opacity = ''; }
+        gsap.fromTo(top, { x: dx }, { x: 0, duration: 0.28, ease: 'power3.out', clearProps: 'transform' });
+        gsap.fromTo(under, { xPercent: -28 * (1 - f), opacity: 0.4 + 0.6 * f }, { xPercent: -28, opacity: 0.4, duration: 0.28, ease: 'power3.out', onComplete: hide });
+      } else { under.style.transform = ''; under.style.opacity = ''; hide(); }
     };
     stack.addEventListener('touchend', end);
     stack.addEventListener('touchcancel', end);
 
-    listView.append(pageList(open));
-    stack.append(listView, pageView);
+    listView.append(pageList());
+    stack.append(listView);
     root.className = 'settings-root narrow';
     root.replaceChildren(header, stack);
   };
